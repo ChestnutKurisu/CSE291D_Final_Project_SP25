@@ -1,7 +1,7 @@
 # requirements.txt ― minimal working example
 numpy>=1.26,<2          # numpy 2 still breaks several deps
 scipy
-numba>=0.61             # works with numpy 1.26 on Py-3.10/3.11
+numba>=0.57,<0.58            # works with numpy 1.26 on Py-3.10/3.11
 pyfftw
 mpi4py                  # needs system MPI headers
 h5py
