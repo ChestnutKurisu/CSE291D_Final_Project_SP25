@@ -1,39 +1,17 @@
-# Core numerics
-numpy
+# requirements.txt ― minimal working example
+numpy>=1.26,<2          # numpy 2 still breaks several deps
 scipy
-numba          # JIT for inner loops
-pyfftw         # fast Fourier Poisson solver
-mpi4py         # optional: distributed runs
-h5py           # binary output files
-
-# Flow-structure platform
-sopht          # vortex-IBM + grid utils  (clone from GitHub)
-pyelastica     # Cosserat-rod engine
-meshio         # read/write VTK files
-
-# Acceleration / optional GPU
-cupy           # if CUDA available (optional)
-# or torch for future differentiable experiments
-
-# Visualization / post-processing
+numba>=0.61             # works with numpy 1.26 on Py-3.10/3.11
+pyfftw
+mpi4py                  # needs system MPI headers
+h5py
+pyelastica              # FSI rod solver (needs numpy<2 right now)
+meshio
 matplotlib
 pyvista
-vedo           # lightweight VTK wrapper
+vedo
 imageio
 ffmpeg-python
-tqdm           # progress bars
-pandas         # dataframes for plots
-
-# Utilities & IO
-pillow
-psutil
-scikit-image
-tabulate
-click          # CLI parsing
-
-# Testing / linting (helps reproducibility)
-pytest
-pytest-benchmark
-black
-isort
-
+tqdm
+pandas
+git+https://github.com/SophT-Team/SophT.git#egg=sopht   # ← fixed
