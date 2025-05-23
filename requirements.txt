@@ -1,17 +1,21 @@
-# requirements.txt ― minimal working example
-numpy>=1.26,<2          # numpy 2 still breaks several deps
-scipy
-numba>=0.57,<0.58            # works with numpy 1.26 on Py-3.10/3.11
+# core numerics ------------------------------------------------------
+numpy>=1.24,<1.26          # 1.25.x is the latest that works everywhere
+scipy<1.11                 # satisfies pyelastica 0.3.x
+numba>=0.57,<0.58          # OK with numpy 1.25, required by sopht
 pyfftw
-mpi4py                  # needs system MPI headers
+mpi4py
 h5py
-pyelastica              # FSI rod solver (needs numpy<2 right now)
+pyelastica                 # 0.3.2, brings SciPy pin
+
+# geometry / viz -----------------------------------------------------
 meshio
-matplotlib
+matplotlib                 # remove the duplicate later in the file
 pyvista
 vedo
 imageio
 ffmpeg-python
 tqdm
 pandas
-git+https://github.com/SophT-Team/SophT.git#egg=sopht   # ← fixed
+
+# fluid/solid solver -------------------------------------------------
+git+https://github.com/SophT-Team/SophT.git#egg=sopht
