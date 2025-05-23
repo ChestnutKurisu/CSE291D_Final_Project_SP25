@@ -1,0 +1,39 @@
+# Core numerics
+numpy
+scipy
+numba          # JIT for inner loops
+pyfftw         # fast Fourier Poisson solver
+mpi4py         # optional: distributed runs
+h5py           # binary output files
+
+# Flow-structure platform
+sopht          # vortex-IBM + grid utils  (clone from GitHub)
+pyelastica     # Cosserat-rod engine
+meshio         # read/write VTK files
+
+# Acceleration / optional GPU
+cupy           # if CUDA available (optional)
+# or torch for future differentiable experiments
+
+# Visualization / post-processing
+matplotlib
+pyvista
+vedo           # lightweight VTK wrapper
+imageio
+ffmpeg-python
+tqdm           # progress bars
+pandas         # dataframes for plots
+
+# Utilities & IO
+pillow
+psutil
+scikit-image
+tabulate
+click          # CLI parsing
+
+# Testing / linting (helps reproducibility)
+pytest
+pytest-benchmark
+black
+isort
+
