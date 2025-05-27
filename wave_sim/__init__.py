@@ -7,6 +7,12 @@ from .wave_catalog import (
     AcousticWave,
     FluidSurfaceWave,
     ElectromagneticWave,
+    SeismicSurfaceWave,
+    GuidedWave,
+    AcousticMode,
+    FluidInternalWave,
+    EMWave,
+    MHDWave,
 )
 
 __all__ = [
@@ -18,4 +24,10 @@ __all__ = [
     'AcousticWave',
     'FluidSurfaceWave',
     'ElectromagneticWave',
+    'SeismicSurfaceWave',
+    'GuidedWave',
+    'AcousticMode',
+    'FluidInternalWave',
+    'EMWave',
+    'MHDWave',
 ]

@@ -8,6 +8,12 @@ phenomena without needing to configure the base solver each time.
 """
 
 from .base import WaveSimulation
+from .surface_wave import SeismicSurfaceWave
+from .guided_wave import GuidedWave
+from .acoustic_mode import AcousticMode
+from .fluid_internal_wave import FluidInternalWave
+from .em_wave import EMWave
+from .mhd_wave import MHDWave
 
 
 # ---------------------------------------------------------------------------
@@ -127,4 +133,10 @@ __all__ = [
     "AcousticWave",
     "FluidSurfaceWave",
     "ElectromagneticWave",
+    "SeismicSurfaceWave",
+    "GuidedWave",
+    "AcousticMode",
+    "FluidInternalWave",
+    "EMWave",
+    "MHDWave",
 ]
