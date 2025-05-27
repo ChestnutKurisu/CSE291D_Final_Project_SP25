@@ -2,8 +2,10 @@
 
 This repository contains a minimal framework for simulating and animating simple wave phenomena.
 
-Only a subset of the requested 70 wave types is implemented. Currently there are basic demonstrations
-of seismic P-waves and S-waves using a 2D finite difference solver.
+The repository now includes a simple subclass for each of **70** different wave
+types collected in ``wave_sim.wave_catalog``.  These range from seismic and
+acoustic examples to fluid, electromagnetic and plasma waves, all reusing the
+same underlying 2‑D solver for illustration.
 
 ## Usage Notes
 
@@ -32,8 +34,6 @@ sim.initialize(source_func=gaussian)
 The solver emits a warning if the CFL condition ``c * dt / dx`` exceeds
 ``1 / sqrt(2)`` to help maintain stability.
 
-Animations can be generated via `examples/collage.py` which will output small MP4 files for
-these two waves. The script can be expanded with additional simulations as they become available.
-
-Due to time and resource constraints the remaining wave types are not implemented. Contributions
-are welcome.
+Animations can be generated via ``examples/all_waves_collage.py`` which iterates
+over every class in the catalog and writes a short MP4 file for each one into an
+``output`` directory.
