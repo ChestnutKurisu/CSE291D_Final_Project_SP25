@@ -1,7 +1,12 @@
 from .base import WaveSimulation
 
+
 class SWaveSimulation(WaveSimulation):
-    """Simple representation of a seismic S-wave using lower wave speed."""
+    """Simple representation of a seismic S-wave (shear).
+
+    By default the wave speed is reduced to ``0.6`` to highlight that
+    shear waves travel slower than compressional waves in most solids.
+    """
 
     def __init__(self, source_func=None, **kwargs):
         kwargs.setdefault('c', 0.6)
