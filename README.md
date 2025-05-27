@@ -2,10 +2,10 @@
 
 This repository contains a minimal framework for simulating and animating simple wave phenomena.
 
-The repository now includes a simple subclass for each of **70** different wave
-types collected in ``wave_sim.wave_catalog``.  These range from seismic and
-acoustic examples to fluid, electromagnetic and plasma waves, all reusing the
-same underlying 2‑D solver for illustration.
+The repository now ships with implementations for **20** illustrative wave
+types collected in ``wave_sim.wave_catalog``.  These cover a mix of seismic,
+acoustic and fluid phenomena while all reusing the same underlying 2‑D solver
+for simplicity.
 
 ## Usage Notes
 
