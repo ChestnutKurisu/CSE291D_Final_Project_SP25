@@ -1,17 +1,38 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.animation import FuncAnimation
+import warnings
 
 class WaveSimulation:
-    """Simple 2D wave equation simulator."""
+    """Simple 2D wave equation simulator.
 
-    def __init__(self, grid_size=100, c=1.0, dx=1.0, dt=0.1):
+    Parameters
+    ----------
+    grid_size : int, optional
+        Number of cells in each spatial dimension.
+    c : float, optional
+        Wave propagation speed.
+    dx : float, optional
+        Spatial resolution.
+    dt : float, optional
+        Time step size.
+    boundary : {"reflective", "periodic", "absorbing"}, optional
+        Boundary condition applied at the domain edges.
+    """
+
+    def __init__(self, grid_size=100, c=1.0, dx=1.0, dt=0.1, boundary="reflective"):
         self.n = grid_size
         self.c = c
         self.dx = dx
         self.dt = dt
+        self.boundary = boundary
         self.u_prev = np.zeros((self.n, self.n))
         self.u_curr = np.zeros((self.n, self.n))
+        cfl = self.c * self.dt / self.dx
+        if cfl > 1 / np.sqrt(2):
+            warnings.warn(
+                "CFL condition violated: c * dt / dx = {:.2f} > 1/sqrt(2)".format(cfl)
+            )
 
     def step(self):
         c2 = (self.c * self.dt / self.dx) ** 2
@@ -23,18 +44,46 @@ class WaveSimulation:
             - 4 * self.u_curr
         )
         u_next = 2 * self.u_curr - self.u_prev + c2 * laplacian
-        # simple reflective boundary
-        u_next[0, :] = 0
-        u_next[-1, :] = 0
-        u_next[:, 0] = 0
-        u_next[:, -1] = 0
+        if self.boundary == "reflective":
+            u_next[0, :] = 0
+            u_next[-1, :] = 0
+            u_next[:, 0] = 0
+            u_next[:, -1] = 0
+        elif self.boundary == "periodic":
+            pass  # np.roll already provides periodic boundaries
+        elif self.boundary == "absorbing":
+            u_next[0, :] = u_next[1, :]
+            u_next[-1, :] = u_next[-2, :]
+            u_next[:, 0] = u_next[:, 1]
+            u_next[:, -1] = u_next[:, -2]
+        else:
+            raise ValueError(f"Unknown boundary condition {self.boundary}")
         self.u_prev, self.u_curr = self.u_curr, u_next
         return u_next
 
-    def initialize(self, source_pos=None, amplitude=1.0):
-        if source_pos is None:
-            source_pos = (self.n // 2, self.n // 2)
-        self.u_curr[source_pos] = amplitude
+    def initialize(self, source_pos=None, amplitude=1.0, source_func=None):
+        """Set the initial displacement field.
+
+        Parameters
+        ----------
+        source_pos : tuple of int, optional
+            Coordinates of a point source, ignored if ``source_func`` is given.
+        amplitude : float, optional
+            Amplitude of the point source.
+        source_func : callable, optional
+            Function ``f(X, Y)`` returning an array of shape ``(n, n)`` with the
+            initial displacement. ``X`` and ``Y`` are coordinate arrays in units
+            of ``dx``.
+        """
+        if source_func is not None:
+            x = np.arange(self.n) * self.dx
+            y = np.arange(self.n) * self.dx
+            X, Y = np.meshgrid(x, y, indexing="ij")
+            self.u_curr = np.asarray(source_func(X, Y))
+        else:
+            if source_pos is None:
+                source_pos = (self.n // 2, self.n // 2)
+            self.u_curr[source_pos] = amplitude
 
     def simulate(self, steps=100):
         frames = []
