@@ -4,6 +4,8 @@ try:
 except Exception:  # pragma: no cover - optional dependency
     cp = None
 
+from ..backend import get_array_module
+
 import cv2
 import matplotlib.pyplot as plt  # Keep this for fallback colormaps
 
@@ -34,11 +36,13 @@ def get_colormap_lut(
     invert: bool = False,
     black_level: float = 0.0,
     make_symmetric: bool = False,
+    backend: str = "auto",
 ) -> np.ndarray:
-    """Return a 256×3 uint8 colour-map lookup table."""
+    """Return a 256×3 uint8 colour-map lookup table on the requested backend."""
 
     global __LUT_CACHE
-    key = (name, invert, black_level, make_symmetric)
+    xp = get_array_module(backend)
+    key = (name, invert, black_level, make_symmetric, xp.__name__)
     if key in __LUT_CACHE:
         return __LUT_CACHE[key]
 
@@ -57,7 +61,8 @@ def get_colormap_lut(
         colors = np.vstack([colors[:128], colors[127::-1]])
 
     colors = np.clip(colors * (1.0 - black_level) + black_level, 0.0, 1.0)
-    lut = (colors * 255).astype(np.uint8)
+    lut_np = (colors * 255).astype(np.uint8)
+    lut = xp.asarray(lut_np)
     __LUT_CACHE[key] = lut
     return lut
 
@@ -83,7 +88,11 @@ class WaveVisualizer:
     def render_intensity(self, brightness_scale=1.0, exp=0.5, overlay_visualization=True):
         xp = cp if cp is not None and isinstance(self.intensity, cp.ndarray) else np
         gray = (xp.clip((self.intensity ** exp) * brightness_scale, 0.0, 1.0) * 254.0).astype(np.uint8)
-        img = self.intensity_colormap[gray.get()] if xp is cp else self.intensity_colormap[gray]
+        if xp is cp:
+            img = xp.take(self.intensity_colormap, gray, axis=0)
+            img = img.get()
+        else:
+            img = np.take(self.intensity_colormap, gray, axis=0)
         img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
         if overlay_visualization:
             img = cv2.add(img, self.visualization_image)
@@ -92,7 +101,11 @@ class WaveVisualizer:
     def render_field(self, brightness_scale=1.0, overlay_visualization=True):
         xp = cp if cp is not None and isinstance(self.field, cp.ndarray) else np
         gray = (xp.clip(self.field * brightness_scale, -1.0, 1.0) * 127 + 127).astype(np.uint8)
-        img = self.field_colormap[gray.get()] if xp is cp else self.field_colormap[gray]
+        if xp is cp:
+            img = xp.take(self.field_colormap, gray, axis=0)
+            img = img.get()
+        else:
+            img = np.take(self.field_colormap, gray, axis=0)
         img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
         if overlay_visualization:
             img = cv2.add(img, self.visualization_image)
