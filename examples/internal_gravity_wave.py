@@ -15,7 +15,11 @@ def psi0(x):
 DEFAULT_OUTPUT_DIR = "output_1d_animations_individual"
 
 
-def generate_animation(output_dir=DEFAULT_OUTPUT_DIR, out_name="internal_gravity_wave.mp4"):
+def generate_animation(
+    output_dir: str = DEFAULT_OUTPUT_DIR,
+    out_name: str = "internal_gravity_wave.mp4",
+    steps: int | None = None,
+) -> str:
     os.makedirs(output_dir, exist_ok=True)
     out_path = os.path.join(output_dir, out_name)
 
@@ -29,7 +33,8 @@ def generate_animation(output_dir=DEFAULT_OUTPUT_DIR, out_name="internal_gravity
     sim.initial_conditions(psi0)
     writer = imageio.get_writer(out_path, fps=30)
     fig, ax = plt.subplots(figsize=(8, 4))
-    for _ in range(sim.nt):
+    nsteps = sim.nt if steps is None else min(steps, sim.nt)
+    for _ in range(nsteps):
         sim.step()
         ax.clear()
         ax.plot(sim.x, sim.psi)

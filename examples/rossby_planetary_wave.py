@@ -17,7 +17,11 @@ def psi0(X, Y):
 DEFAULT_OUTPUT_DIR = "output_1d_animations_individual"
 
 
-def generate_animation(output_dir=DEFAULT_OUTPUT_DIR, out_name="rossby_planetary_wave.mp4"):
+def generate_animation(
+    output_dir: str = DEFAULT_OUTPUT_DIR,
+    out_name: str = "rossby_planetary_wave.mp4",
+    steps: int | None = None,
+) -> str:
     os.makedirs(output_dir, exist_ok=True)
     out_path = os.path.join(output_dir, out_name)
 
@@ -30,10 +34,11 @@ def generate_animation(output_dir=DEFAULT_OUTPUT_DIR, out_name="rossby_planetary
     )
     writer = imageio.get_writer(out_path, fps=30)
     fig, ax = plt.subplots(figsize=(6, 5))
-    for _ in range(sim.nt):
+    nsteps = sim.nt if steps is None else min(steps, sim.nt)
+    for _ in range(nsteps):
         sim.step()
         ax.clear()
-        cf = ax.contourf(X, Y, sim.psi, levels=20, cmap="RdBu_r")
+        ax.contourf(X, Y, sim.psi, levels=20, cmap="RdBu_r")
         ax.set_xlabel("x")
         ax.set_ylabel("y")
         fig.canvas.draw()
