@@ -1,31 +1,22 @@
 import numpy as np
-
 try:
     import cupy as cp
 except Exception:  # pragma: no cover - optional dependency
     cp = None
 
 import cv2
+import matplotlib.pyplot as plt  # Keep this for fallback colormaps
 
 from .simulator import WaveSimulator2D
 from .colormaps import (
+    colormap_wave1,
     colormap_wave2,
     colormap_wave3,
     colormap_wave4,
     colormap_icefire,
 )
 
-# Predefined colormaps from the reference
-colormap_wave1 = np.array([
-    [255, 255, 255], [254, 254, 253], [254, 253, 252], [253, 252, 250],
-    [253, 250, 248], [252, 249, 246], [252, 248, 244], [251, 246, 242],
-    [251, 245, 240], [250, 243, 237], [250, 242, 235], [249, 240, 232],
-    [248, 238, 230], [248, 237, 227], [247, 235, 224], [247, 233, 221],
-    [246, 231, 218], [245, 229, 215], [245, 227, 212], [244, 225, 209],
-])
-
-
-import matplotlib.pyplot as plt
+# THE LOCAL DEFINITION OF colormap_wave1 THAT WAS HERE HAS BEEN REMOVED
 
 __LUT_CACHE = {}
 
@@ -52,7 +43,8 @@ def get_colormap_lut(
         return __LUT_CACHE[key]
 
     if name in _PRESET_TABLE:
-        base = _PRESET_TABLE[name] / 255.0
+        # Preset tables are uint8; normalise in float for interpolation
+        base = _PRESET_TABLE[name].astype(np.float32) / 255.0
         t = np.linspace(0, 1, base.shape[0])
         t256 = np.linspace(0, 1, 256)
         colors = np.vstack([np.interp(t256, t, base[:, ch]) for ch in range(3)]).T
