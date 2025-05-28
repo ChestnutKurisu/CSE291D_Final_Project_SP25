@@ -116,14 +116,17 @@ class WaveSimulator2D:
             )
         v = (self.u - self.u_prev) * self.d * self.global_dampening
         r = self.u + v + laplacian * (self.c * self.dt / self.dx) ** 2
-        if self.boundary == BoundaryCondition.ABSORBING and self.sponge_thickness > 0:
-            damp = self.sponge_thickness
-            for i in range(damp):
-                factor = ((damp - 1.0 - i) / (damp - 1.0)) ** 2 if damp > 1 else 0.0
-                r[i, :] *= factor
-                r[-1 - i, :] *= factor
-                r[:, i] *= factor
-                r[:, -1 - i] *= factor
+        if self.boundary == BoundaryCondition.ABSORBING:
+            n = 32  # sponge width
+            taper = xp.sin(0.5 * xp.pi * xp.linspace(0, 1, n)) ** 2
+            self.u_prev[:n] *= taper[::-1, None]
+            self.u[:n] *= taper[::-1, None]
+            self.u_prev[-n:] *= taper[:, None]
+            self.u[-n:] *= taper[:, None]
+            self.u_prev[:, :n] *= taper[None, ::-1]
+            self.u[:, :n] *= taper[None, ::-1]
+            self.u_prev[:, -n:] *= taper[None, :]
+            self.u[:, -n:] *= taper[None, :]
         self.u_prev[:] = self.u
         self.u[:] = r
         self.t += self.dt
