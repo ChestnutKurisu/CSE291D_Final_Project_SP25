@@ -8,6 +8,7 @@ from .high_quality import (
     simulate_wave,
     PointSource,
     ConstantSpeed,
+    ConstantElasticSpeed,
     StaticDampening,
     StaticRefractiveIndex,
     StaticImageScene,
@@ -18,6 +19,7 @@ from .high_quality import (
     ModulatorSmoothSquare,
     ModulatorDiscreteSignal,
 )
+from .elastic2d import ElasticWaveSimulator2D, rayleigh_surface_demo
 from .core.boundary import BoundaryCondition
 from .wave_catalog import (
     PrimaryWave,
@@ -58,12 +60,14 @@ from .collage import collage_videos
 
 __all__ = [
     "WaveSimulator2D",
+    "ElasticWaveSimulator2D",
     "SceneObject",
     "WaveVisualizer",
     "get_colormap_lut",
     "simulate_wave",
     "PointSource",
     "ConstantSpeed",
+    "ConstantElasticSpeed",
     "StaticDampening",
     "StaticRefractiveIndex",
     "StaticImageScene",
@@ -97,6 +101,7 @@ __all__ = [
     "RossbyPlanetaryWave",
     "FlexuralBeamWave",
     "AlfvenWave",
+    "rayleigh_surface_demo",
     "rayleigh_wave_speed",
     "love_wave_dispersion",
     "lamb_s0_mode",
