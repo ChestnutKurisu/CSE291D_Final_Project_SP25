@@ -1,8 +1,12 @@
 """Convenience imports for the wave simulation package."""
 
 from .base import WaveSimulation
-from .p_wave import PWaveSimulation
-from .s_wave import SWaveSimulation, SHWaveSimulation, SVWaveSimulation
+from .solvers import (
+    PWaveSimulation,
+    SWaveSimulation,
+    SHWaveSimulation,
+    SVWaveSimulation,
+)
 from .wave_catalog import (
     PrimaryWave,
     SecondaryWave,

@@ -16,7 +16,7 @@ def ricker_wavelet(t, f0):
 # P-WAVE SIMULATION
 # ---------------------------------------------------------------------------
 
-def simulate_p_wave(nx=200, nz=200, dx=5.0, dz=5.0, alpha=3000.0, dt=0.0005, nt=750, f0=15.0):
+def simulate_p_wave(nx=400, nz=400, dx=5.0, dz=5.0, alpha=3000.0, dt=0.0005, nt=750, f0=15.0):
     P_now = np.zeros((nx, nz))
     P_prev = np.zeros((nx, nz))
     P_next = np.zeros((nx, nz))
@@ -43,7 +43,7 @@ def simulate_p_wave(nx=200, nz=200, dx=5.0, dz=5.0, alpha=3000.0, dt=0.0005, nt=
 # S-WAVE SIMULATION (scalar potential)
 # ---------------------------------------------------------------------------
 
-def simulate_s_wave(nx=200, nz=200, dx=5.0, dz=5.0, beta=1500.0, dt=0.0005, nt=750, f0=15.0):
+def simulate_s_wave(nx=400, nz=400, dx=5.0, dz=5.0, beta=1500.0, dt=0.0005, nt=750, f0=15.0):
     S_now = np.zeros((nx, nz))
     S_prev = np.zeros((nx, nz))
     S_next = np.zeros((nx, nz))
@@ -70,7 +70,7 @@ def simulate_s_wave(nx=200, nz=200, dx=5.0, dz=5.0, beta=1500.0, dt=0.0005, nt=7
 # SH-WAVE SIMULATION
 # ---------------------------------------------------------------------------
 
-def simulate_sh_wave(nx=200, nz=200, dx=5.0, dz=5.0, beta=1500.0, dt=0.0005, nt=750, f0=15.0):
+def simulate_sh_wave(nx=400, nz=400, dx=5.0, dz=5.0, beta=1500.0, dt=0.0005, nt=750, f0=15.0):
     uY_now = np.zeros((nx, nz))
     uY_prev = np.zeros((nx, nz))
     uY_next = np.zeros((nx, nz))
@@ -97,7 +97,7 @@ def simulate_sh_wave(nx=200, nz=200, dx=5.0, dz=5.0, beta=1500.0, dt=0.0005, nt=
 # SV-WAVE SIMULATION (scalar potential)
 # ---------------------------------------------------------------------------
 
-def simulate_sv_wave(nx=200, nz=200, dx=5.0, dz=5.0, beta=1500.0, dt=0.0005, nt=750, f0=15.0):
+def simulate_sv_wave(nx=400, nz=400, dx=5.0, dz=5.0, beta=1500.0, dt=0.0005, nt=750, f0=15.0):
     Psi_now = np.zeros((nx, nz))
     Psi_prev = np.zeros((nx, nz))
     Psi_next = np.zeros((nx, nz))
@@ -121,7 +121,7 @@ def simulate_sv_wave(nx=200, nz=200, dx=5.0, dz=5.0, beta=1500.0, dt=0.0005, nt=
 
 
 if __name__ == "__main__":
-    snaps, field = simulate_p_wave(nt=200)
+    snaps, field = simulate_p_wave(nt=400)
     plt.imshow(field.T, cmap="seismic", origin="lower", aspect="auto")
     plt.title("Final P-Wave Field")
     plt.colorbar(label="Amplitude")

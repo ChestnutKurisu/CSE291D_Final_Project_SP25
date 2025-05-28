@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 # equations demonstrating a boundary trapped Kelvin wave.
 
 Ly = 10.0
-Ny = 200
+Ny = 400
 
 dy = Ly / (Ny - 1)
 

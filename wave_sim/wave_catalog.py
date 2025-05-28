@@ -7,9 +7,11 @@ the field with a unit impulse in the centre of the grid.
 """
 
 from .base import WaveSimulation
-from .p_wave import PWaveSimulation
-from .s_wave import SWaveSimulation, SHWaveSimulation, SVWaveSimulation
-from .basic_wave_solvers import (
+from .solvers import (
+    PWaveSimulation,
+    SWaveSimulation,
+    SHWaveSimulation,
+    SVWaveSimulation,
     PlaneAcousticWave,
     SphericalAcousticWave,
     DeepWaterGravityWave,

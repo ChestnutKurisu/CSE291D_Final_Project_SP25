@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 # Solves v_tt = v_A^2 v_xx along a uniform magnetic field.
 
 Lx = 2.0
-Nx = 200
+Nx = 400
 
 B0 = 1.0
 rho = 1.0
