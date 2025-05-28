@@ -7,46 +7,44 @@ the field with a unit impulse in the centre of the grid.
 """
 
 from .base import WaveSimulation
+from .p_wave import PWaveSimulation
+from .s_wave import SWaveSimulation, SHWaveSimulation, SVWaveSimulation
 
 
 ###############################################################################
 # SEISMIC BODY WAVES
 ###############################################################################
 
-class PrimaryWave(WaveSimulation):
+class PrimaryWave(PWaveSimulation):
     """Compressional body wave."""
 
     def __init__(self, **kwargs):
-        kwargs.setdefault("c", 1.0)
+        kwargs.setdefault("c", 3000.0)
         super().__init__(**kwargs)
-        self.initialize(amplitude=1.0)
 
 
-class SecondaryWave(WaveSimulation):
+class SecondaryWave(SWaveSimulation):
     """Shear body wave."""
 
     def __init__(self, **kwargs):
-        kwargs.setdefault("c", 0.6)
+        kwargs.setdefault("c", 1500.0)
         super().__init__(**kwargs)
-        self.initialize(amplitude=1.0)
 
 
-class SHWave(WaveSimulation):
+class SHWave(SHWaveSimulation):
     """Horizontally polarised shear."""
 
     def __init__(self, **kwargs):
-        kwargs.setdefault("c", 0.55)
+        kwargs.setdefault("c", 1500.0)
         super().__init__(**kwargs)
-        self.initialize(amplitude=1.0)
 
 
-class SVWave(WaveSimulation):
+class SVWave(SVWaveSimulation):
     """Vertically polarised shear."""
 
     def __init__(self, **kwargs):
-        kwargs.setdefault("c", 0.55)
+        kwargs.setdefault("c", 1500.0)
         super().__init__(**kwargs)
-        self.initialize(amplitude=1.0)
 
 
 ###############################################################################
