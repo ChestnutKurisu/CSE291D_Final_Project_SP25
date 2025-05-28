@@ -4,26 +4,13 @@ from __future__ import annotations
 
 import numpy as np
 
-from .solvers import (
-    PlaneAcousticWave,
-    SphericalAcousticWave,
-    DeepWaterGravityWave,
-    ShallowWaterGravityWave,
-    CapillaryWave,
-    InternalGravityWave as InternalGravityWaveSolver,
-    KelvinWave as KelvinWaveSolver,
-    RossbyPlanetaryWave as RossbyPlanetaryWaveSolver,
-    FlexuralBeamWave as FlexuralBeamWaveSolver,
-    AlfvenWave as AlfvenWaveSolver,
-)
 from .high_quality import ConstantSpeed, PointSource
+from .initial_conditions import gaussian_2d
 
 
 def gaussian_initial_condition(X: np.ndarray, Y: np.ndarray, sigma: float = 5.0):
     """Return a Gaussian pulse centered in the grid."""
-    x0 = X.shape[0] // 2
-    y0 = Y.shape[1] // 2
-    return np.exp(-((X - x0) ** 2 + (Y - y0) ** 2) / (2 * sigma ** 2))
+    return gaussian_2d(X, Y, sigma=sigma)
 
 
 class Wave2DConfig:
@@ -115,46 +102,6 @@ class ScholteWave(Wave2DConfig):
     default_speed = 900.0
 
 
-class InternalGravityWave(InternalGravityWaveSolver):
-    is_2d_fd = False
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.initial_conditions(lambda x: np.exp(-100 * (x - self.L / 2) ** 2))
-
-
-class KelvinWave(KelvinWaveSolver):
-    is_2d_fd = False
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.initial_conditions(lambda y: np.exp(-((y - self.L / 2) / (self.L/20)) ** 2))
-
-
-class RossbyPlanetaryWave(RossbyPlanetaryWaveSolver):
-    is_2d_fd = False
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.initial_conditions(
-            lambda X, Y: np.exp(-((X - self.Lx / 2) ** 2 + (Y - self.Ly / 2) ** 2) / ((self.Lx/10) ** 2))
-        )
-
-
-class FlexuralBeamWave(FlexuralBeamWaveSolver):
-    is_2d_fd = False
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.initial_conditions(lambda x: np.exp(-100 * (x - self.L / 2) ** 2))
-
-
-class AlfvenWave(AlfvenWaveSolver):
-    is_2d_fd = False
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.initial_conditions(lambda x: np.sin(2 * np.pi * x / self.L))
 
 
 __all__ = [
@@ -168,15 +115,5 @@ __all__ = [
     "LambA0Mode",
     "StoneleyWave",
     "ScholteWave",
-    "PlaneAcousticWave",
-    "SphericalAcousticWave",
-    "DeepWaterGravityWave",
-    "ShallowWaterGravityWave",
-    "CapillaryWave",
-    "InternalGravityWave",
-    "KelvinWave",
-    "RossbyPlanetaryWave",
-    "FlexuralBeamWave",
-    "AlfvenWave",
     "gaussian_initial_condition",
 ]

@@ -1,13 +1,10 @@
 import numpy as np
 import warnings
-
-try:
-    import cupy as cp
-    import cupyx.scipy.signal
-except Exception:  # pragma: no cover - optional dependency
-    cp = None
-
 import scipy.signal
+
+from ..backend import get_array_module
+from ..core.boundary import BoundaryCondition
+from ..core.kernels import get_laplacian_kernel
 
 
 class SceneObject:
@@ -36,22 +33,22 @@ class WaveSimulator2D:
         Initial displacement field.
     backend : {"gpu", "cpu"}, optional
         Array backend. ``gpu`` uses :mod:`cupy` when available.
-    boundary : {"reflective", "periodic", "absorbing"}, optional
+    boundary : :class:`~wave_sim.core.boundary.BoundaryCondition` or str, optional
         Boundary condition.
     dx : float, optional
         Spatial resolution of the grid.  ``laplacian`` is scaled by ``1/dx^2``.
     """
 
     def __init__(self, width, height, scene_objects=None, initial_field=None,
-                 backend="gpu", boundary="reflective", dx=1.0, dt=1.0):
-        if backend == "gpu" and cp is not None:
-            self.xp = cp
-        else:
-            self.xp = np
+                 backend="gpu", boundary=BoundaryCondition.REFLECTIVE, dx=1.0, dt=1.0):
+        self.xp = get_array_module(backend)
         xp = self.xp
 
         self.global_dampening = 1.0
-        self.boundary = boundary
+        if isinstance(boundary, BoundaryCondition):
+            self.boundary = boundary
+        else:
+            self.boundary = BoundaryCondition(boundary)
         self.c = xp.ones((height, width), dtype=xp.float32)
         self.d = xp.ones((height, width), dtype=xp.float32)
         self.u = xp.zeros((height, width), dtype=xp.float32)
@@ -61,9 +58,7 @@ class WaveSimulator2D:
             self.u[:] = initial_field
             self.u_prev[:] = initial_field
 
-        self.laplacian_kernel = xp.array([[0.066, 0.184, 0.066],
-                                          [0.184, -1.0, 0.184],
-                                          [0.066, 0.184, 0.066]], dtype=xp.float32)
+        self.laplacian_kernel = get_laplacian_kernel(xp)
 
         self.t = 0.0
         self.dt = dt
@@ -88,14 +83,15 @@ class WaveSimulator2D:
 
     def update_field(self):
         xp = self.xp
-        if self.boundary == "periodic":
+        if self.boundary == BoundaryCondition.PERIODIC:
             bmode = "wrap"
-        elif self.boundary == "reflective":
+        elif self.boundary == BoundaryCondition.REFLECTIVE:
             bmode = "symm"
         else:
             bmode = "fill"
-        if xp is cp:
-            laplacian = cp.asarray(
+        if xp.__name__ == "cupy":
+            import cupyx.scipy.signal  # type: ignore
+            laplacian = xp.asarray(
                 cupyx.scipy.signal.convolve2d(
                     self.u, self.laplacian_kernel, mode="same", boundary=bmode
                 )
@@ -106,7 +102,7 @@ class WaveSimulator2D:
             )
         v = (self.u - self.u_prev) * self.d * self.global_dampening
         r = self.u + v + laplacian * (self.c * self.dt / self.dx) ** 2
-        if self.boundary == "absorbing":
+        if self.boundary == BoundaryCondition.ABSORBING:
             damp = 8
             for i in range(damp):
                 factor = ((damp - 1 - i) / (damp - 1)) ** 2 if damp > 1 else 0.0

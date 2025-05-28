@@ -13,8 +13,8 @@ from .high_quality import (
     StaticImageScene,
     StrainRefractiveIndex,
     StaticRefractiveIndexPolygon,
-    StaticRefractiveIndexBox,
 )
+from .core.boundary import BoundaryCondition
 from .wave_catalog import (
     PrimaryWave,
     SecondaryWave,
@@ -26,6 +26,9 @@ from .wave_catalog import (
     LambA0Mode,
     StoneleyWave,
     ScholteWave,
+    gaussian_initial_condition,
+)
+from .solvers import (
     PlaneAcousticWave,
     SphericalAcousticWave,
     DeepWaterGravityWave,
@@ -37,6 +40,7 @@ from .wave_catalog import (
     FlexuralBeamWave,
     AlfvenWave,
 )
+from .initial_conditions import gaussian_1d, gaussian_2d
 
 from .dispersion import (
     rayleigh_wave_speed,
@@ -61,7 +65,10 @@ __all__ = [
     "StaticImageScene",
     "StrainRefractiveIndex",
     "StaticRefractiveIndexPolygon",
-    "StaticRefractiveIndexBox",
+    "BoundaryCondition",
+    "gaussian_1d",
+    "gaussian_2d",
+    "gaussian_initial_condition",
     "PrimaryWave",
     "SecondaryWave",
     "SHWave",

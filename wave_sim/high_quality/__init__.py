@@ -11,7 +11,6 @@ from .scene_objects import (
     StaticImageScene,
     StrainRefractiveIndex,
     StaticRefractiveIndexPolygon,
-    StaticRefractiveIndexBox,
 )
 
 __all__ = [
@@ -27,5 +26,4 @@ __all__ = [
     "StaticImageScene",
     "StrainRefractiveIndex",
     "StaticRefractiveIndexPolygon",
-    "StaticRefractiveIndexBox",
 ]

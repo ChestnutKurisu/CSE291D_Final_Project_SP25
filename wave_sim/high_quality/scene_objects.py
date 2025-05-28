@@ -200,10 +200,8 @@ class StaticRefractiveIndexPolygon(SceneObject):
         cv2.fillPoly(image, [vertices], (60, 60, 60), lineType=cv2.LINE_AA)
 
 
-class StaticRefractiveIndexBox(StaticRefractiveIndexPolygon):
-    """Rotated rectangular refractive index region."""
-
-    def __init__(self, center, box_size, box_angle_rad, refractive_index):
+    @classmethod
+    def create_box(cls, center, box_size, angle_rad, refractive_index):
         cx, cy = center
         width, height = box_size
         half_w = width / 2.0
@@ -214,8 +212,8 @@ class StaticRefractiveIndexBox(StaticRefractiveIndexPolygon):
             [half_w, half_h],
             [-half_w, half_h],
         ], dtype=np.float32)
-        rot = cv2.getRotationMatrix2D((0, 0), np.rad2deg(box_angle_rad), 1.0)
+        rot = cv2.getRotationMatrix2D((0, 0), np.rad2deg(angle_rad), 1.0)
         rotated = cv2.transform(np.array([local_vertices]), rot)[0]
         translated = rotated + [cx, cy]
-        super().__init__(translated, refractive_index)
+        return cls(translated, refractive_index)
 
