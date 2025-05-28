@@ -5,6 +5,10 @@ try:
 except Exception:  # pragma: no cover
     cp = None
 
+def _get_xp(arr):
+    """Return cupy if *arr* is a CuPy array, else numpy."""
+    return cp if (cp is not None and isinstance(arr, cp.ndarray)) else np
+
 try:
     import cv2
 except Exception:  # pragma: no cover - optional dependency
@@ -33,7 +37,7 @@ class PointSource(SceneObject):
         pass  # field updates happen in :meth:`update_field`
 
     def update_field(self, field, t):
-        xp = cp if cp is not None and isinstance(field, cp.ndarray) else np
+        xp = _get_xp(field)
         local_amp = self.amplitude
         if self.amp_modulator is not None:
             local_amp *= self.amp_modulator(t)
@@ -45,7 +49,6 @@ class PointSource(SceneObject):
             return
         if 0 <= self.y < image.shape[0] and 0 <= self.x < image.shape[1]:
             cv2.circle(image, (self.x, self.y), 3, (50, 50, 50), -1)
-
 
 class ConstantSpeed(SceneObject):
     def __init__(self, speed):
@@ -259,7 +262,7 @@ class LineSource(SceneObject):
         pass
 
     def update_field(self, field, t):
-        xp = XP
+        xp = _get_xp(field)
         local_amp = self.amplitude
         if self.amp_modulator is not None:
             local_amp *= self.amp_modulator(t)
@@ -318,40 +321,4 @@ class ModulatorDiscreteSignal:
         return (1.0 - frac) * s0 + frac * s1
 
 
-class GaussianBlobSource(SceneObject):
-    """Emit a Gaussian-shaped disturbance centered at ``(x, y)``."""
-
-    def __init__(self, x, y, sigma_px, freq, amplitude=1.0, phase=0.0, amp_modulator=None):
-        self.x = int(x)
-        self.y = int(y)
-        self.sigma_px = float(sigma_px)
-        self.freq = freq
-        self.amplitude = amplitude
-        self.phase = phase
-        self.amp_modulator = amp_modulator
-        self._cache = None
-
-    def _gaussian_mask(self, shape, xp):
-        if self._cache and self._cache[0] == shape and self._cache[1] is xp:
-            return self._cache[2]
-        h, w = shape
-        ys, xs = xp.mgrid[:h, :w]
-        mask = xp.exp(-((xs - self.x) ** 2 + (ys - self.y) ** 2) / (2.0 * self.sigma_px ** 2))
-        self._cache = (shape, xp, mask)
-        return mask
-
-    def render(self, field, wave_speed_field, dampening_field):
-        pass
-
-    def update_field(self, field, t):
-        xp = cp if cp is not None and isinstance(field, cp.ndarray) else np
-        local_amp = self.amplitude
-        if self.amp_modulator is not None:
-            local_amp *= self.amp_modulator(t)
-        value = xp.sin(self.phase + self.freq * t) * local_amp
-        mask = self._gaussian_mask(field.shape, xp)
-        field += mask * value
-
-    def render_visualization(self, image):
-        cv2.circle(image, (self.x, self.y), int(self.sigma_px), (50, 50, 50), 1)
 

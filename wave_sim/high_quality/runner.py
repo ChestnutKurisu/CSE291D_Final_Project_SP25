@@ -8,14 +8,35 @@ from ..core.boundary import BoundaryCondition
 from .visualizer import WaveVisualizer, get_colormap_lut
 
 
-def simulate_wave(scene_builder, out_path, steps=2000, sim_steps_per_frame=8,
-                  resolution=(512, 512), fps=60, backend="gpu",
-                  boundary_condition=BoundaryCondition.REFLECTIVE, global_dampening=1.0):
-    """Run a high quality simulation and save to MP4."""
+def simulate_wave(
+    scene_builder,
+    out_path,
+    steps=2000,
+    sim_steps_per_frame=8,
+    resolution=(512, 512),
+    fps=60,
+    backend="gpu",
+    boundary_condition=BoundaryCondition.REFLECTIVE,
+    global_dampening=1.0,
+    sponge_thickness=8,
+):
+    """Run a high quality simulation and save to MP4.
+
+    Parameters
+    ----------
+    sponge_thickness : int, optional
+        Thickness of the absorbing boundary sponge layer when
+        ``boundary_condition`` is ``ABSORBING``.
+    """
     objects, w, h, init = scene_builder(resolution)
     sim = WaveSimulator2D(
-        w, h, objects, initial_field=init,
-        backend=backend, boundary=boundary_condition
+        w,
+        h,
+        objects,
+        initial_field=init,
+        backend=backend,
+        boundary=boundary_condition,
+        sponge_thickness=sponge_thickness,
     )
     sim.global_dampening = global_dampening
     vis = WaveVisualizer(

@@ -7,6 +7,23 @@ import numpy as np
 from .high_quality import ConstantSpeed, PointSource
 from .initial_conditions import gaussian_2d
 
+# --- NEW: analytical phase-speed helpers ------------------------------------
+from .dispersion import (
+    rayleigh_wave_speed,
+    love_wave_dispersion,
+    lamb_s0_mode,
+    lamb_a0_mode,
+    stoneley_wave_speed,
+    scholte_wave_speed,
+)
+
+# Default elastic constants (quick-demo values)
+_ALPHA = 3000.0      # m s-1  P-wave
+_BETA  = 1500.0      # m s-1  S-wave
+_RHO   = 2000.0      # kg m-3
+_WATER_C   = 1480.0  # m s-1
+_WATER_RHO = 1000.0  # kg m-3
+
 
 def gaussian_initial_condition(X: np.ndarray, Y: np.ndarray, sigma: float = 5.0):
     """Return a Gaussian pulse centered in the grid."""
@@ -79,72 +96,57 @@ class SVWave(Wave2DConfig):
 
 
 class RayleighWave(Wave2DConfig):
-    """PLACEHOLDER: uses scalar solver with tuned speed only.
+    """Rayleigh surface wave – scalar surrogate with realistic c_R."""
 
-    A real Rayleigh wave arises from coupled P-- and S--wave motion
-    in an elastic half‐space.  This configuration merely reuses the
-    scalar ``WaveSimulator2D`` and so lacks the correct elliptic
-    particle motion or dispersion.  It is included for illustrative
-    purposes only.
-    """
-
-    default_speed = 1300.0
+    def __init__(self, **kw):
+        c_R = rayleigh_wave_speed(_ALPHA, _BETA)
+        super().__init__(c=c_R, **kw)
 
 
 class LoveWave(Wave2DConfig):
-    """PLACEHOLDER: horizontally polarised surface shear.
+    """Love surface wave – fundamental mode phase speed (~10 Hz)."""
 
-    The model again relies on the scalar wave equation and therefore
-    omits the vector shear‐strain behaviour that characterises real
-    Love waves.  Only the propagation speed is representative.
-    """
-
-    default_speed = 1400.0
+    def __init__(self, h: float = 100.0, **kw):
+        c_L = love_wave_dispersion(freq=2*np.pi*10,
+                                   beta1=_BETA*0.8,
+                                   beta2=_BETA, h=h, n_modes=1)[0]
+        super().__init__(c=c_L, **kw)
 
 
 class LambS0Mode(Wave2DConfig):
-    """PLACEHOLDER: symmetric Lamb mode.
+    """Symmetric Lamb plate mode – scalar surrogate."""
 
-    This class simply sets a constant phase speed for a plate wave but
-    does not implement the frequency‐dependent dispersion of true Lamb
-    modes in elastic plates.
-    """
-
-    default_speed = 2000.0
+    def __init__(self, plate_h: float = 5.0, **kw):
+        c = lamb_s0_mode(freq=2*np.pi*5, alpha=_ALPHA, beta=_BETA,
+                         thickness=plate_h)
+        super().__init__(c=c or 2000.0, **kw)
 
 
 class LambA0Mode(Wave2DConfig):
-    """PLACEHOLDER: antisymmetric Lamb mode.
+    """Antisymmetric Lamb plate mode."""
 
-    As with ``LambS0Mode`` this uses the scalar solver and ignores the
-    dispersive nature of real A0 plate waves.  It should be viewed as an
-    illustrative demo rather than a physically faithful model.
-    """
-
-    default_speed = 1000.0
+    def __init__(self, plate_h: float = 5.0, **kw):
+        c = lamb_a0_mode(freq=2*np.pi*5, alpha=_ALPHA, beta=_BETA,
+                         thickness=plate_h)
+        super().__init__(c=c or 1000.0, **kw)
 
 
 class StoneleyWave(Wave2DConfig):
-    """PLACEHOLDER: interface wave at a solid–solid boundary.
+    """Stoneley solid–solid interface – scalar surrogate."""
 
-    Stoneley waves involve coupled shear motion across a material
-    interface.  This simplified configuration propagates a scalar field
-    with a single constant speed and therefore lacks the characteristic
-    vector displacements.
-    """
-
-    default_speed = 1200.0
+    def __init__(self, **kw):
+        c = stoneley_wave_speed(_ALPHA, _BETA, _RHO,
+                                _ALPHA*0.6, _BETA*0.6, _RHO*1.2)
+        super().__init__(c=c or 1200.0, **kw)
 
 
 class ScholteWave(Wave2DConfig):
-    """PLACEHOLDER: ocean–bottom interface wave.
+    """Scholte solid–fluid interface – scalar surrogate."""
 
-    Real Scholte waves arise from an elastic–fluid boundary and exhibit
-    strong dispersion.  Here we merely reuse the scalar solver with a
-    fixed speed, so the behaviour is only qualitatively similar.
-    """
-
-    default_speed = 900.0
+    def __init__(self, **kw):
+        c = scholte_wave_speed(_ALPHA, _BETA, _RHO,
+                               _WATER_C, _WATER_RHO)
+        super().__init__(c=c or 900.0, **kw)
 
 
 
