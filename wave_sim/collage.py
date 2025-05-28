@@ -1,9 +1,10 @@
 import math
 import imageio.v2 as imageio
 import numpy as np
+from scipy.ndimage import zoom
 
 
-def collage_videos(paths, outfile, grid=None, fps=30):
+def collage_videos(paths, outfile, grid=None, fps=30, mode="grid", scale=1.0):
     """Combine multiple video files into a tiled collage.
 
     Parameters
@@ -13,9 +14,14 @@ def collage_videos(paths, outfile, grid=None, fps=30):
     outfile : str
         Output path for the collage video.
     grid : tuple of int, optional
-        (rows, cols) layout.  If not given, a nearly square grid is chosen.
+        (rows, cols) layout for ``mode='grid'``. If not given, a nearly square
+        grid is chosen.
     fps : int, optional
         Frame rate of the output video.
+    mode : {"grid", "horizontal", "vertical"}, optional
+        Layout mode. ``horizontal`` and ``vertical`` ignore ``grid``.
+    scale : float, optional
+        Scale factor applied to each frame before compositing.
     """
     readers = [imageio.get_reader(p) for p in paths]
     meta = readers[0].get_meta_data()
@@ -24,20 +30,30 @@ def collage_videos(paths, outfile, grid=None, fps=30):
     nframes = min(r.count_frames() for r in readers)
 
     n = len(readers)
-    if grid is None:
-        cols = int(math.ceil(math.sqrt(n)))
-        rows = int(math.ceil(n / cols))
+    if mode == "horizontal":
+        rows, cols = 1, n
+    elif mode == "vertical":
+        rows, cols = n, 1
     else:
-        rows, cols = grid
+        if grid is None:
+            cols = int(math.ceil(math.sqrt(n)))
+            rows = int(math.ceil(n / cols))
+        else:
+            rows, cols = grid
 
     frame0 = readers[0].get_data(0)
+    if scale != 1.0:
+        frame0 = zoom(frame0, (scale, scale, 1), order=1)
     h, w = frame0.shape[:2]
 
     writer = imageio.get_writer(outfile, fps=fps)
     for i in range(nframes):
         tiles = []
         for r in readers:
-            tiles.append(r.get_data(i))
+            frame = r.get_data(i)
+            if scale != 1.0:
+                frame = zoom(frame, (scale, scale, 1), order=1)
+            tiles.append(frame)
         # pad list if grid larger than number of videos
         while len(tiles) < rows * cols:
             tiles.append(np.zeros_like(frame0))
