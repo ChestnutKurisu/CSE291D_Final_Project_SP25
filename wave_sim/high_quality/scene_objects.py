@@ -64,6 +64,27 @@ class ConstantSpeed(SceneObject):
         pass
 
 
+class ConstantElasticSpeed(SceneObject):
+    """Set both P- and S-wave speeds for the entire domain."""
+
+    def __init__(self, c_p: float, c_s: float) -> None:
+        self.c_p = float(c_p)
+        self.c_s = float(c_s)
+
+    def render(self, field, wave_speed_field, dampening_field):
+        if wave_speed_field.ndim == 3 and wave_speed_field.shape[2] == 2:
+            wave_speed_field[:, :, 0] = self.c_p
+            wave_speed_field[:, :, 1] = self.c_s
+        else:  # fallback for scalar solver
+            wave_speed_field[:] = self.c_p
+
+    def update_field(self, field, t):
+        pass
+
+    def render_visualization(self, image):
+        pass
+
+
 class StaticDampening(SceneObject):
     """Fixed dampening mask with optional absorbing border."""
 

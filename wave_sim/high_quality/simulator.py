@@ -53,6 +53,7 @@ class WaveSimulator2D:
         dx=1.0,
         dt=1.0,
         sponge_thickness: int = 8,
+        elastic: bool = False,
     ):
         self.xp = get_array_module(backend)
         xp = self.xp
@@ -62,10 +63,16 @@ class WaveSimulator2D:
             self.boundary = boundary
         else:
             self.boundary = BoundaryCondition(boundary)
-        self.c = xp.ones((height, width), dtype=xp.float32)
+        self.elastic = bool(elastic)
+        if self.elastic:
+            self.c = xp.ones((height, width, 2), dtype=xp.float32)
+            self.u = xp.zeros((height, width, 2), dtype=xp.float32)
+            self.u_prev = xp.zeros_like(self.u)
+        else:
+            self.c = xp.ones((height, width), dtype=xp.float32)
+            self.u = xp.zeros((height, width), dtype=xp.float32)
+            self.u_prev = xp.zeros_like(self.u)
         self.d = xp.ones((height, width), dtype=xp.float32)
-        self.u = xp.zeros((height, width), dtype=xp.float32)
-        self.u_prev = xp.zeros((height, width), dtype=xp.float32)
 
         if initial_field is not None:
             self.u[:] = initial_field
@@ -93,9 +100,12 @@ class WaveSimulator2D:
         self.c.fill(1.0)
         self.d.fill(1.0)
         for obj in self.scene_objects:
-            obj.render(self.u, self.c, self.d)
+            if self.elastic:
+                obj.render(self.u[..., 0], self.c, self.d)
+            else:
+                obj.render(self.u, self.c, self.d)
 
-    def update_field(self):
+    def _update_field_scalar(self):
         xp = self.xp
         if self.boundary == BoundaryCondition.PERIODIC:
             bmode = "wrap"
@@ -131,10 +141,63 @@ class WaveSimulator2D:
         self.u[:] = r
         self.t += self.dt
 
+    def _update_field_elastic(self):
+        xp = self.xp
+        ux = self.u[..., 0]
+        uz = self.u[..., 1]
+        ux_prev = self.u_prev[..., 0]
+        uz_prev = self.u_prev[..., 1]
+        cp = self.c[..., 0]
+        cs = self.c[..., 1]
+
+        def lap(arr):
+            d0, d1 = xp.gradient(arr, self.dx, self.dx, edge_order=2)
+            dd0 = xp.gradient(d0, self.dx, axis=0, edge_order=2)
+            dd1 = xp.gradient(d1, self.dx, axis=1, edge_order=2)
+            return dd0 + dd1
+
+        duz_dz, dux_dx = xp.gradient(ux, self.dx, self.dx, edge_order=2)
+        dvz_dz, dvx_dx = xp.gradient(uz, self.dx, self.dx, edge_order=2)
+        div_u = dvx_dx + duz_dz
+        ddiv_dz, ddiv_dx = xp.gradient(div_u, self.dx, self.dx, edge_order=2)
+
+        accel_x = (cp ** 2 - cs ** 2) * ddiv_dx + cs ** 2 * lap(ux)
+        accel_z = (cp ** 2 - cs ** 2) * ddiv_dz + cs ** 2 * lap(uz)
+
+        vx = (ux - ux_prev) * self.d * self.global_dampening
+        vz = (uz - uz_prev) * self.d * self.global_dampening
+
+        ux_next = ux + vx + accel_x * (self.dt ** 2)
+        uz_next = uz + vz + accel_z * (self.dt ** 2)
+
+        if self.boundary == BoundaryCondition.ABSORBING:
+            n = 32
+            taper = xp.sin(0.5 * xp.pi * xp.linspace(0, 1, n)) ** 2
+            for arr in (ux_prev, uz_prev, ux, uz):
+                arr[:n] *= taper[::-1, None]
+                arr[-n:] *= taper[:, None]
+                arr[:, :n] *= taper[None, ::-1]
+                arr[:, -n:] *= taper[None, :]
+
+        self.u_prev[..., 0] = ux
+        self.u_prev[..., 1] = uz
+        self.u[..., 0] = ux_next
+        self.u[..., 1] = uz_next
+        self.t += self.dt
+
+    def update_field(self):
+        if self.elastic:
+            self._update_field_elastic()
+        else:
+            self._update_field_scalar()
+
     def update_scene(self):
         self._render_scene_properties()
         for obj in self.scene_objects:
-            obj.update_field(self.u, self.t)
+            if self.elastic:
+                obj.update_field(self.u[..., 0], self.t)
+            else:
+                obj.update_field(self.u, self.t)
 
     def get_field(self):
         return self.u
