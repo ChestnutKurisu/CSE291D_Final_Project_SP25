@@ -9,11 +9,14 @@ from .visualizer import WaveVisualizer, get_colormap_lut
 
 def simulate_wave(scene_builder, out_path, steps=2000, sim_steps_per_frame=8,
                   resolution=(512, 512), fps=60, backend="gpu",
-                  boundary_condition="reflective"):
+                  boundary_condition="reflective", global_dampening=1.0):
     """Run a high quality simulation and save to MP4."""
     objects, w, h, init = scene_builder(resolution)
-    sim = WaveSimulator2D(w, h, objects, initial_field=init,
-                         backend=backend, boundary=boundary_condition)
+    sim = WaveSimulator2D(
+        w, h, objects, initial_field=init,
+        backend=backend, boundary=boundary_condition
+    )
+    sim.global_dampening = global_dampening
     vis = WaveVisualizer(
         field_colormap=get_colormap_lut("wave1"),
         intensity_colormap=get_colormap_lut("afmhot"),

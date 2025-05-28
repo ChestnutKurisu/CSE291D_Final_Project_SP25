@@ -6,6 +6,12 @@ from wave_sim.wave_catalog import (
     SecondaryWave,
     SHWave,
     SVWave,
+    RayleighWave,
+    LoveWave,
+    LambS0Mode,
+    LambA0Mode,
+    StoneleyWave,
+    ScholteWave,
 )
 
 import argparse
@@ -19,6 +25,12 @@ WAVE_CLASSES = [
     SecondaryWave,
     SHWave,
     SVWave,
+    RayleighWave,
+    LoveWave,
+    LambS0Mode,
+    LambA0Mode,
+    StoneleyWave,
+    ScholteWave,
 ]
 
 
@@ -49,6 +61,7 @@ def run_all(args):
             resolution=(args.resolution, args.resolution),
             fps=args.fps,
             backend="gpu",
+            boundary_condition=args.boundary,
         )
         files.append(outfile)
     collage_videos(files, os.path.join(args.outdir, "collage.mp4"), fps=args.fps, mode=args.mode)
@@ -57,11 +70,12 @@ def run_all(args):
 def parse_args():
     p = argparse.ArgumentParser(description="Run high quality wave simulations and build a collage")
     p.add_argument("--outdir", default="output_hq", help="directory for individual videos")
-    p.add_argument("--resolution", type=int, default=512, help="simulation width/height in pixels")
-    p.add_argument("--steps", type=int, default=600, help="number of simulation steps")
-    p.add_argument("--sim-steps-per-frame", type=int, default=4, help="steps per rendered frame")
-    p.add_argument("--fps", type=int, default=60, help="frames per second")
+    p.add_argument("--resolution", type=int, default=256, help="simulation width/height in pixels")
+    p.add_argument("--steps", type=int, default=300, help="number of simulation steps")
+    p.add_argument("--sim-steps-per-frame", type=int, default=2, help="steps per rendered frame")
+    p.add_argument("--fps", type=int, default=30, help="frames per second")
     p.add_argument("--mode", choices=["grid", "horizontal", "vertical", "overlay"], default="grid", help="collage layout mode")
+    p.add_argument("--boundary", choices=["reflective", "periodic", "absorbing"], default="absorbing", help="boundary condition")
     return p.parse_args()
 
 
