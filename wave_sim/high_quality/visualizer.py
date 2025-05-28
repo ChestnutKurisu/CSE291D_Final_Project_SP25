@@ -8,6 +8,12 @@ except Exception:  # pragma: no cover - optional dependency
 import cv2
 
 from .simulator import WaveSimulator2D
+from .colormaps import (
+    colormap_wave2,
+    colormap_wave3,
+    colormap_wave4,
+    colormap_icefire,
+)
 
 # Predefined colormaps from the reference
 colormap_wave1 = np.array([
@@ -23,6 +29,14 @@ import matplotlib.pyplot as plt
 
 __LUT_CACHE = {}
 
+_PRESET_TABLE = {
+    "wave1": colormap_wave1,
+    "wave2": colormap_wave2,
+    "wave3": colormap_wave3,
+    "wave4": colormap_wave4,
+    "icefire": colormap_icefire,
+}
+
 
 def get_colormap_lut(
     name: str = "wave1",
@@ -37,8 +51,8 @@ def get_colormap_lut(
     if key in __LUT_CACHE:
         return __LUT_CACHE[key]
 
-    if name == "wave1":
-        base = colormap_wave1 / 255.0
+    if name in _PRESET_TABLE:
+        base = _PRESET_TABLE[name] / 255.0
         t = np.linspace(0, 1, base.shape[0])
         t256 = np.linspace(0, 1, 256)
         colors = np.vstack([np.interp(t256, t, base[:, ch]) for ch in range(3)]).T

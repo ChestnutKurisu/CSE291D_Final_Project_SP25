@@ -46,6 +46,52 @@ class PointSource(SceneObject):
         if 0 <= self.y < image.shape[0] and 0 <= self.x < image.shape[1]:
             cv2.circle(image, (self.x, self.y), 3, (50, 50, 50), -1)
 
+
+class GaussianBlobSource(SceneObject):
+    """Soft circular source using a Gaussian envelope."""
+
+    def __init__(self, x, y, sigma_px, freq, amplitude=1.0):
+        self.x = int(x)
+        self.y = int(y)
+        self.sigma = float(sigma_px)
+        self.freq = float(freq)
+        self.amplitude = float(amplitude)
+
+        size = int(self.sigma * 6) + 1
+        half = size // 2
+        ax = XP.arange(-half, half + 1)
+        xx, yy = XP.meshgrid(ax, ax)
+        g = XP.exp(-(xx ** 2 + yy ** 2) / (2 * self.sigma ** 2))
+        self.kernel = g.astype(XP.float32)
+        self.kernel_size = size
+
+    def render(self, field, wave_speed_field, dampening_field):
+        pass
+
+    def update_field(self, field, t):
+        xp = XP
+        val = xp.sin(t * self.freq) * self.amplitude
+        half = self.kernel_size // 2
+
+        y0 = max(self.y - half, 0)
+        x0 = max(self.x - half, 0)
+        y1 = min(self.y + half + 1, field.shape[0])
+        x1 = min(self.x + half + 1, field.shape[1])
+
+        ky0 = half - (self.y - y0)
+        kx0 = half - (self.x - x0)
+        ky1 = ky0 + (y1 - y0)
+        kx1 = kx0 + (x1 - x0)
+
+        patch = field[y0:y1, x0:x1]
+        k = self.kernel[ky0:ky1, kx0:kx1]
+        patch *= (1.0 - k)
+        patch += val * k
+        field[y0:y1, x0:x1] = patch
+
+    def render_visualization(self, image):
+        cv2.circle(image, (self.x, self.y), int(self.sigma), (50, 50, 50), 1)
+
 class ConstantSpeed(SceneObject):
     def __init__(self, speed):
         self.speed = float(speed)
@@ -299,12 +345,58 @@ class ModulatorSmoothSquare:
 
 
 class ModulatorDiscreteSignal:
-    """Interpolate values from a discrete signal."""
+    """Amplitude modulation from a discrete time series."""
 
-    def __init__(self, times, values):
-        self.times = np.asarray(times, dtype=float)
-        self.values = np.asarray(values, dtype=float)
+    def __init__(self, samples, sample_rate=1.0):
+        self.samples = np.asarray(samples, dtype=np.float32)
+        self.sample_rate = float(sample_rate)
 
     def __call__(self, t):
-        return float(np.interp(t, self.times, self.values))
+        if self.samples.size == 0:
+            return 0.0
+        idx = t * self.sample_rate
+        idx0 = int(np.floor(idx))
+        idx1 = min(idx0 + 1, len(self.samples) - 1)
+        frac = idx - idx0
+        s0 = self.samples[max(min(idx0, len(self.samples) - 1), 0)]
+        s1 = self.samples[max(min(idx1, len(self.samples) - 1), 0)]
+        return (1.0 - frac) * s0 + frac * s1
+
+
+class GaussianBlobSource(SceneObject):
+    """Emit a Gaussian-shaped disturbance centered at ``(x, y)``."""
+
+    def __init__(self, x, y, sigma_px, freq, amplitude=1.0, phase=0.0, amp_modulator=None):
+        self.x = int(x)
+        self.y = int(y)
+        self.sigma_px = float(sigma_px)
+        self.freq = freq
+        self.amplitude = amplitude
+        self.phase = phase
+        self.amp_modulator = amp_modulator
+        self._cache = None
+
+    def _gaussian_mask(self, shape, xp):
+        if self._cache and self._cache[0] == shape and self._cache[1] is xp:
+            return self._cache[2]
+        h, w = shape
+        ys, xs = xp.mgrid[:h, :w]
+        mask = xp.exp(-((xs - self.x) ** 2 + (ys - self.y) ** 2) / (2.0 * self.sigma_px ** 2))
+        self._cache = (shape, xp, mask)
+        return mask
+
+    def render(self, field, wave_speed_field, dampening_field):
+        pass
+
+    def update_field(self, field, t):
+        xp = cp if cp is not None and isinstance(field, cp.ndarray) else np
+        local_amp = self.amplitude
+        if self.amp_modulator is not None:
+            local_amp *= self.amp_modulator(t)
+        value = xp.sin(self.phase + self.freq * t) * local_amp
+        mask = self._gaussian_mask(field.shape, xp)
+        field += mask * value
+
+    def render_visualization(self, image):
+        cv2.circle(image, (self.x, self.y), int(self.sigma_px), (50, 50, 50), 1)
 

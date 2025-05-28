@@ -11,9 +11,11 @@ from .scene_objects import (
     StaticImageScene,
     StrainRefractiveIndex,
     StaticRefractiveIndexPolygon,
+    GaussianBlobSource,
     LineSource,
     ModulatorSmoothSquare,
     ModulatorDiscreteSignal,
+    GaussianBlobSource,
 )
 
 __all__ = [
@@ -29,7 +31,9 @@ __all__ = [
     "StaticImageScene",
     "StrainRefractiveIndex",
     "StaticRefractiveIndexPolygon",
+    "GaussianBlobSource",
     "LineSource",
     "ModulatorSmoothSquare",
     "ModulatorDiscreteSignal",
+    "GaussianBlobSource",
 ]
