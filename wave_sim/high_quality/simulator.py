@@ -1,4 +1,5 @@
 import numpy as np
+import warnings
 
 try:
     import cupy as cp
@@ -42,7 +43,7 @@ class WaveSimulator2D:
     """
 
     def __init__(self, width, height, scene_objects=None, initial_field=None,
-                 backend="gpu", boundary="reflective", dx=1.0):
+                 backend="gpu", boundary="reflective", dx=1.0, dt=1.0):
         if backend == "gpu" and cp is not None:
             self.xp = cp
         else:
@@ -65,12 +66,25 @@ class WaveSimulator2D:
                                           [0.066, 0.184, 0.066]], dtype=xp.float32)
 
         self.t = 0.0
-        self.dt = 1.0
+        self.dt = dt
         self.dx = dx
         self.scene_objects = scene_objects if scene_objects is not None else []
 
+        self._render_scene_properties()
+        if xp.max(self.c) * self.dt / self.dx > 0.7:
+            warnings.warn(
+                f"Potential CFL violation: max(c) * dt / dx = {float(xp.max(self.c) * self.dt / self.dx):.2f} > 0.7."
+            )
+
     def reset_time(self):
         self.t = 0.0
+
+    def _render_scene_properties(self):
+        """Render wave speed and dampening fields from scene objects."""
+        self.c.fill(1.0)
+        self.d.fill(1.0)
+        for obj in self.scene_objects:
+            obj.render(self.u, self.c, self.d)
 
     def update_field(self):
         xp = self.xp
@@ -95,7 +109,7 @@ class WaveSimulator2D:
         if self.boundary == "absorbing":
             damp = 8
             for i in range(damp):
-                factor = (damp - i) / damp
+                factor = ((damp - 1 - i) / (damp - 1)) ** 2 if damp > 1 else 0.0
                 r[i, :] *= factor
                 r[-1 - i, :] *= factor
                 r[:, i] *= factor
@@ -105,10 +119,7 @@ class WaveSimulator2D:
         self.t += self.dt
 
     def update_scene(self):
-        self.c.fill(1.0)
-        self.d.fill(1.0)
-        for obj in self.scene_objects:
-            obj.render(self.u, self.c, self.d)
+        self._render_scene_properties()
         for obj in self.scene_objects:
             obj.update_field(self.u, self.t)
 
