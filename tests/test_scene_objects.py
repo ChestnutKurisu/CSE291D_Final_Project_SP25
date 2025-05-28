@@ -17,6 +17,7 @@ from wave_sim.high_quality.scene_objects import (
     ModulatorSmoothSquare,
     ModulatorDiscreteSignal,
 )
+from wave_sim.high_quality.simulator import WaveSimulator2D, SceneObject
 
 
 def test_point_source_phase_and_modulator():
@@ -43,4 +44,43 @@ def test_modulator_discrete_signal_interp():
     m = ModulatorDiscreteSignal([0, 1, 2], [0, 1, 0])
     assert m(0.5) == pytest.approx(0.5)
     assert m(1.5) == pytest.approx(0.5)
+
+
+class DummyStatic(SceneObject):
+    def __init__(self):
+        self.count = 0
+
+    def render(self, field, c, d):
+        self.count += 1
+
+    def update_field(self, field, t):
+        pass
+
+
+class DummyDynamic(DummyStatic):
+    is_static = False
+
+
+def test_wave_simulator_static_scene_skip_render():
+    obj = DummyStatic()
+    sim = WaveSimulator2D(8, 8, [obj], backend="cpu")
+    assert obj.count == 1
+    sim.update_scene()
+    assert obj.count == 1
+
+
+def test_wave_simulator_mark_dirty():
+    obj = DummyStatic()
+    sim = WaveSimulator2D(8, 8, [obj], backend="cpu")
+    sim.mark_scene_dirty()
+    sim.update_scene()
+    assert obj.count == 2
+
+
+def test_wave_simulator_dynamic_object_always_render():
+    obj = DummyDynamic()
+    sim = WaveSimulator2D(8, 8, [obj], backend="cpu")
+    assert obj.count == 1
+    sim.update_scene()
+    assert obj.count == 2
 

@@ -8,15 +8,29 @@ from ..core.kernels import get_laplacian_kernel
 
 
 class SceneObject:
-    """Interface for simulation scene objects."""
+    """Interface for simulation scene objects.
+
+    Attributes
+    ----------
+    is_static : bool
+        If ``True`` the object's contribution to medium properties does not
+        change over time.  Static objects only need to be rendered once when
+        the scene is (re)initialized.
+    """
+
+    #: Flag indicating whether the object's render output is time invariant.
+    is_static: bool = True
 
     def render(self, field, wave_speed_field, dampening_field):
+        """Render the object's effect on wave speed and dampening fields."""
         pass
 
     def update_field(self, field, t):
+        """Modify the wave field at time ``t``."""
         pass
 
     def render_visualization(self, image):
+        """Draw a visualization representation of the object."""
         pass
 
 
@@ -86,6 +100,9 @@ class WaveSimulator2D:
         self.sponge_thickness = int(sponge_thickness)
         self.scene_objects = scene_objects if scene_objects is not None else []
 
+        # determine whether scene needs to be rendered every frame
+        self.scene_static = all(getattr(o, "is_static", True) for o in self.scene_objects)
+        self._scene_dirty = True
         self._render_scene_properties()
         if xp.max(self.c) * self.dt / self.dx > 0.7:
             warnings.warn(
@@ -104,6 +121,7 @@ class WaveSimulator2D:
                 obj.render(self.u[..., 0], self.c, self.d)
             else:
                 obj.render(self.u, self.c, self.d)
+        self._scene_dirty = False
 
     def _update_field_scalar(self):
         xp = self.xp
@@ -206,12 +224,18 @@ class WaveSimulator2D:
             self._update_field_scalar()
 
     def update_scene(self):
-        self._render_scene_properties()
+        if not self.scene_static or self._scene_dirty:
+            self._render_scene_properties()
         for obj in self.scene_objects:
             if self.elastic:
                 obj.update_field(self.u[..., 0], self.t)
             else:
                 obj.update_field(self.u, self.t)
+
+    def mark_scene_dirty(self):
+        """Flag the scene so medium properties are re-rendered on next update."""
+        self.scene_static = all(getattr(o, "is_static", True) for o in self.scene_objects)
+        self._scene_dirty = True
 
     def get_field(self):
         return self.u

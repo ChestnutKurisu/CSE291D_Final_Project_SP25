@@ -157,6 +157,9 @@ class StaticImageScene(SceneObject):
 class StrainRefractiveIndex(SceneObject):
     """Refractive index field coupled to local strain."""
 
+    # requires recomputation every frame because it depends on the current field
+    is_static = False
+
     def __init__(self, refractive_index_offset, coupling_constant):
         self.coupling_constant = coupling_constant
         self.refractive_index_offset = refractive_index_offset
