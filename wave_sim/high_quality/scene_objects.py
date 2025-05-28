@@ -348,6 +348,93 @@ def gaussian_kernel(size, sigma):
     return kernel / kernel.sum()
 
 
+class GaussianBlobSource(SceneObject):
+    """Sinusoidal emitter with a Gaussian spatial profile."""
+
+    def __init__(
+        self,
+        x,
+        y,
+        sigma_px=5.0,
+        freq=0.1,
+        amplitude=1.0,
+        phase=0.0,
+        amp_modulator=None,
+    ):
+        self.x = int(x)
+        self.y = int(y)
+        self.sigma_px = float(sigma_px)
+        self.freq = freq
+        self.amplitude = amplitude
+        self.phase = phase
+        self.amp_modulator = amp_modulator
+        self.kernel_size = int(max(1, 6 * self.sigma_px))
+        if self.kernel_size % 2 == 0:
+            self.kernel_size += 1
+        self._cached_kernel = None
+        self._kernel_xp = None
+
+    def _get_kernel(self, xp):
+        if self._cached_kernel is not None and self._kernel_xp == xp:
+            return self._cached_kernel
+
+        ax = xp.linspace(
+            -(self.kernel_size - 1) / 2.0,
+            (self.kernel_size - 1) / 2.0,
+            self.kernel_size,
+        )
+        xx, yy = xp.meshgrid(ax, ax)
+        kernel = xp.exp(-0.5 * (xx ** 2 + yy ** 2) / self.sigma_px ** 2)
+        self._cached_kernel = kernel.astype(xp.float32)
+        self._kernel_xp = xp
+        return self._cached_kernel
+
+    def render(self, field, wave_speed_field, dampening_field):
+        pass
+
+    def update_field(self, field, t):
+        xp = _get_xp(field)
+        kernel = self._get_kernel(xp)
+
+        local_amp = self.amplitude
+        if self.amp_modulator is not None:
+            local_amp *= self.amp_modulator(t)
+
+        time_val = xp.sin(self.phase + t * self.freq * 2 * xp.pi) * local_amp
+        source_term = kernel * time_val
+
+        half_k = self.kernel_size // 2
+        y_start, y_end = self.y - half_k, self.y + half_k + 1
+        x_start, x_end = self.x - half_k, self.x + half_k + 1
+
+        field_y_slice = slice(max(0, y_start), min(field.shape[0], y_end))
+        field_x_slice = slice(max(0, x_start), min(field.shape[1], x_end))
+
+        kernel_y_start = max(0, -y_start)
+        kernel_y_end = self.kernel_size - max(0, y_end - field.shape[0])
+        kernel_x_start = max(0, -x_start)
+        kernel_x_end = self.kernel_size - max(0, x_end - field.shape[1])
+        kernel_slice = (
+            slice(kernel_y_start, kernel_y_end),
+            slice(kernel_x_start, kernel_x_end),
+        )
+
+        if (
+            field_y_slice.start < field_y_slice.stop
+            and field_x_slice.start < field_x_slice.stop
+            and kernel_slice[0].start < kernel_slice[0].stop
+            and kernel_slice[1].start < kernel_slice[1].stop
+        ):
+            field[field_y_slice, field_x_slice] += source_term[kernel_slice]
+
+    def render_visualization(self, image):
+        if cv2 is None:
+            return
+        if 0 <= self.y < image.shape[0] and 0 <= self.x < image.shape[1]:
+            cv2.circle(image, (self.x, self.y), 3, (50, 50, 50), -1)
+            cv2.circle(image, (self.x, self.y), int(self.sigma_px), (70, 70, 70), 1)
+
+
 class MovingCharge(SceneObject):
     """Demo object that writes a small travelling Gaussian blob."""
 
