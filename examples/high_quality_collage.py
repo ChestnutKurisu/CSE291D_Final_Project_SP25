@@ -12,16 +12,6 @@ from wave_sim.wave_catalog import (
     LambA0Mode,
     StoneleyWave,
     ScholteWave,
-    PlaneAcousticWave,
-    SphericalAcousticWave,
-    DeepWaterGravityWave,
-    ShallowWaterGravityWave,
-    CapillaryWave,
-    InternalGravityWave,
-    KelvinWave,
-    RossbyPlanetaryWave,
-    FlexuralBeamWave,
-    AlfvenWave,
 )
 
 import argparse
@@ -41,16 +31,6 @@ WAVE_CLASSES = [
     LambA0Mode,
     StoneleyWave,
     ScholteWave,
-    PlaneAcousticWave,
-    SphericalAcousticWave,
-    DeepWaterGravityWave,
-    ShallowWaterGravityWave,
-    CapillaryWave,
-    InternalGravityWave,
-    KelvinWave,
-    RossbyPlanetaryWave,
-    FlexuralBeamWave,
-    AlfvenWave,
 ]
 
 

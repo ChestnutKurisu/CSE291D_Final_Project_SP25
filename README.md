@@ -1,11 +1,15 @@
 # Wave Simulation Examples
 
-This repository contains a minimal framework for simulating and animating simple wave phenomena.  The core solver now supports optional GPU acceleration via ``cupy`` for higher resolution and smoother animations when available.
+This repository contains a minimal framework for simulating and animating simple wave phenomena.  The code has recently been consolidated around a single high quality pipeline.  The core solver now supports optional GPU acceleration via ``cupy`` for higher resolution and smoother animations when available.
 
 The repository now ships with implementations for **20** illustrative wave
 types collected in ``wave_sim.wave_catalog``.  These cover a mix of seismic,
 acoustic and fluid phenomena while all reusing the same underlying 2‑D solver
 for simplicity.
+
+Legacy modules under ``wave_sim2d`` have been removed.  All animations now
+use the GPU optimised utilities found in ``wave_sim.high_quality`` which are
+also able to fall back to NumPy when a CUDA device is not available.
 
 ## Usage Notes
 

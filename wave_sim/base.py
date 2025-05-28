@@ -112,15 +112,3 @@ class WaveSimulation:
             frames.append(arr)
         return frames
 
-    def animate(self, steps=100, interval=30, cmap="viridis"):
-        frames = self.simulate(steps)
-        fig, ax = plt.subplots()
-        im = ax.imshow(frames[0], cmap=cmap, vmin=-1, vmax=1)
-        ax.set_axis_off()
-
-        def update(i):
-            im.set_data(frames[i])
-            return (im,)
-
-        ani = FuncAnimation(fig, update, frames=len(frames), interval=interval, blit=True)
-        return ani
