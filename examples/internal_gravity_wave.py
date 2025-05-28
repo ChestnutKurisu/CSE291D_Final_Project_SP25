@@ -12,13 +12,20 @@ def psi0(x):
     return np.exp(-100 * (x - 1.0) ** 2)
 
 
-OUTPUT_DIR = "output_1d_animations"
+DEFAULT_OUTPUT_DIR = "output_1d_animations_individual"
 
 
-def generate_animation(out_name="internal_gravity_wave.mp4"):
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
-    out_path = os.path.join(OUTPUT_DIR, out_name)
-    sim = InternalGravityWave(L=2.0, Nx=800, T=3.0)
+def generate_animation(output_dir=DEFAULT_OUTPUT_DIR, out_name="internal_gravity_wave.mp4"):
+    os.makedirs(output_dir, exist_ok=True)
+    out_path = os.path.join(output_dir, out_name)
+
+    sim_L = 2.0
+    sim_Nx = 800
+    sim_T = 3.0
+    dx = sim_L / sim_Nx
+    N_val = 1.0
+    dt_val = 0.8 * dx / N_val
+    sim = InternalGravityWave(L=sim_L, Nx=sim_Nx, T=sim_T, dt=dt_val)
     sim.initial_conditions(psi0)
     writer = imageio.get_writer(out_path, fps=30)
     fig, ax = plt.subplots(figsize=(8, 4))
