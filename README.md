@@ -44,7 +44,9 @@ simulate_wave(scene, "out.mp4", steps=200, resolution=(256, 256))
 
 The scene object collection also includes ``LineSource`` for emitting waves
 along an arbitrary segment and ``ModulatorSmoothSquare`` for smoothly pulsing
-source amplitudes.
+source amplitudes. ``LineSource`` accepts an optional ``amp_modulator`` to vary
+its strength over time. A ``GaussianBlobSource`` object creates a soft circular
+emitter using a Gaussian envelope.
 
 The solver emits a warning if the CFL condition ``c * dt / dx`` exceeds
 ``1 / sqrt(2)`` to help maintain stability.
@@ -67,6 +69,10 @@ The script writes an MP4 per wave and then assembles the clips into a single
 collage video.  Because the 2‑D solver is a generic scalar model, only the
 body-wave examples are physically meaningful; the surface and interface waves
 are included purely for illustration.
+
+Colour lookup tables are retrieved with ``get_colormap_lut``.  Preset names
+include ``wave1``–``wave4`` and ``icefire`` which correspond to built-in
+palettes.
 
 
 Additional scripts in the ``examples`` directory demonstrate the specialised
