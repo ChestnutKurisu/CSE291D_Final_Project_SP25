@@ -1,10 +1,9 @@
 import numpy as np
 import warnings
-import scipy.signal
 
 from ..backend import get_array_module
 from ..core.boundary import BoundaryCondition
-from ..core.kernels import get_laplacian_kernel
+from ..core.kernels import get_laplacian_kernel, finite_difference_laplacian
 
 
 class SceneObject:
@@ -131,17 +130,9 @@ class WaveSimulator2D:
             bmode = "symm"
         else:
             bmode = "fill"
-        if xp.__name__ == "cupy":
-            import cupyx.scipy.signal  # type: ignore
-            laplacian = xp.asarray(
-                cupyx.scipy.signal.convolve2d(
-                    self.u, self.laplacian_kernel, mode="same", boundary=bmode
-                )
-            )
-        else:
-            laplacian = scipy.signal.convolve2d(
-                self.u, self.laplacian_kernel, mode="same", boundary=bmode
-            )
+        laplacian = finite_difference_laplacian(
+            self.u, boundary=bmode, xp=xp, kernel=self.laplacian_kernel
+        )
         v = (self.u - self.u_prev) * self.d * self.global_dampening
         r = self.u + v + laplacian * (self.c * self.dt / self.dx) ** 2
         if self.boundary == BoundaryCondition.ABSORBING and self.sponge_thickness > 0:
