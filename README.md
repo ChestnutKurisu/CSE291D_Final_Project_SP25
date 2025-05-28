@@ -42,6 +42,10 @@ scene = PrimaryWave(initial_condition=gaussian).get_scene_builder()
 simulate_wave(scene, "out.mp4", steps=200, resolution=(256, 256))
 ```
 
+The scene object collection also includes ``LineSource`` for emitting waves
+along an arbitrary segment and ``ModulatorSmoothSquare`` for smoothly pulsing
+source amplitudes.
+
 The solver emits a warning if the CFL condition ``c * dt / dx`` exceeds
 ``1 / sqrt(2)`` to help maintain stability.
 

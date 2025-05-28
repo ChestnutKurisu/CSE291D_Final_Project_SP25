@@ -7,6 +7,7 @@ except Exception:  # pragma: no cover
 
 import cv2
 import scipy.signal
+import math
 
 from .simulator import SceneObject
 
@@ -216,4 +217,69 @@ class StaticRefractiveIndexPolygon(SceneObject):
         rotated = cv2.transform(np.array([local_vertices]), rot)[0]
         translated = rotated + [cx, cy]
         return cls(translated, refractive_index)
+
+
+class LineSource(SceneObject):
+    """Emit a sinusoidal disturbance along a line segment."""
+
+    def __init__(
+        self,
+        x1,
+        y1,
+        x2,
+        y2,
+        freq=0.1,
+        amplitude=1.0,
+        phase=0.0,
+        amp_modulator=None,
+    ):
+        self.x1 = int(x1)
+        self.y1 = int(y1)
+        self.x2 = int(x2)
+        self.y2 = int(y2)
+        self.freq = freq
+        self.amplitude = amplitude
+        self.phase = phase
+        self.amp_modulator = amp_modulator
+
+    def render(self, field, wave_speed_field, dampening_field):
+        pass
+
+    def update_field(self, field, t):
+        xp = XP
+        local_amp = self.amplitude
+        if self.amp_modulator is not None:
+            local_amp *= self.amp_modulator(t)
+        v = xp.sin(self.phase + self.freq * t) * local_amp
+
+        dx = self.x2 - self.x1
+        dy = self.y2 - self.y1
+        length = int(xp.sqrt(dx * dx + dy * dy))
+        if length == 0:
+            return
+        xs = xp.linspace(self.x1, self.x2, length).round().astype(int)
+        ys = xp.linspace(self.y1, self.y2, length).round().astype(int)
+
+        H, W = field.shape
+        valid = (xs >= 0) & (xs < W) & (ys >= 0) & (ys < H)
+        xs = xs[valid]
+        ys = ys[valid]
+
+        field[ys, xs] = v
+
+    def render_visualization(self, image):
+        cv2.line(image, (self.x1, self.y1), (self.x2, self.y2), (50, 50, 50), 1)
+
+
+class ModulatorSmoothSquare:
+    """Simple smoothed square wave amplitude modulator."""
+
+    def __init__(self, frequency=0.1, phase=0.0, smoothness=0.5):
+        self.frequency = frequency
+        self.phase = phase
+        self.smoothness = max(min(smoothness, 1.0), 1e-4)
+
+    def __call__(self, t):
+        s = self.smoothness ** 4
+        return 0.5 + 0.5 * math.atan(math.sin(self.frequency * t + self.phase) / s) / math.atan(1.0 / s)
 
