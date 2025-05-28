@@ -8,16 +8,26 @@ from matplotlib.gridspec import GridSpec
 
 
 class WaveVisualizer:
-    """Render the wave field along with velocity and spectrum plots."""
+    """
+    Render the wave field together with velocity- and spectrum-sub-plots.
+    The new `zlim` argument lets you clamp the vertical axis so the surface
+    never “explodes” visually.
+    """
 
-    def __init__(self, sim_shape, output_video_size, dt, dx,
-                 main_plot_cmap_name="coolwarm", brightness_scale=1.0,
-                 dynamic_z=True):
+    def __init__(self,
+                 sim_shape,
+                 output_video_size,
+                 dt, dx,
+                 main_plot_cmap_name="coolwarm",
+                 brightness_scale=1.0,
+                 dynamic_z=True,
+                 zlim=(-0.25, 1.0)):          # ← NEW ARG (default matches baseline example)
         self.sim_shape = sim_shape
         self.ndim = len(sim_shape)
         self.dt, self.dx = dt, dx
-        self.dynamic_z = bool(dynamic_z)
+        self.dynamic_z = bool(dynamic_z) and (zlim is None)  # disable auto-scale if zlim supplied
         self.cmap_name = main_plot_cmap_name
+        self.zlim = zlim
 
         w, h = output_video_size
         self.fig = plt.figure(figsize=(w/100, h/100), dpi=100)
@@ -41,13 +51,14 @@ class WaveVisualizer:
         self.ax_main.set_zlabel("Amplitude")
         self.ax_main.set_box_aspect((2*nx, 2*ny, 2*max(nx, ny)))
 
+        # ── fixed z-limits ────────────────────────────────────────────────
+        if self.zlim is not None:
+            self.ax_main.set_zlim(*self.zlim)
         self.fixed_zlim = float(brightness_scale)
-        if not self.dynamic_z:
-            self.ax_main.set_zlim(-self.fixed_zlim, self.fixed_zlim)
 
-        self.vel_line, = self.ax_velocity.plot([], [], '-b')
+        # side-plots
+        self.vel_line,  = self.ax_velocity.plot([], [], '-b')
         self.spec_line, = self.ax_spectrum.plot([], [], '-r')
-
         self.ax_velocity.set_xlabel("Time (s)")
         self.ax_velocity.set_ylabel("Velocity")
         self.ax_spectrum.set_xlabel("Frequency (Hz)")
@@ -55,17 +66,20 @@ class WaveVisualizer:
 
         self.fig.tight_layout(pad=1.0)
 
+        # state holders
         self.field_slice_to_visualize = None
         self.velocity_history = []
         self.amplitude_history_for_fft = []
         self.current_sim_time = 0.0
 
+    # ---------------------------------------------------------------------
     def update(self, field_slice, velocity_history, amplitude_history, current_time):
         self.field_slice_to_visualize = field_slice
         self.velocity_history = velocity_history
         self.amplitude_history_for_fft = amplitude_history
         self.current_sim_time = current_time
 
+    # ---------------------------------------------------------------------
     def render_composite_frame(self):
         field = self.field_slice_to_visualize
 
@@ -73,8 +87,8 @@ class WaveVisualizer:
         if self.dynamic_z:
             z_max = max(1e-6, np.percentile(np.abs(field), 99)) * 1.05
             self.ax_main.set_zlim(-z_max, z_max)
-        else:
-            self.ax_main.set_zlim(-self.fixed_zlim, self.fixed_zlim)
+        elif self.zlim is not None:
+            self.ax_main.set_zlim(*self.zlim)
 
         self.ax_main.plot_surface(self.X, self.Y, field,
                                   cmap=cm.get_cmap(self.cmap_name),
@@ -87,8 +101,7 @@ class WaveVisualizer:
         if self.velocity_history:
             t_arr, v_arr = zip(*self.velocity_history)
             self.vel_line.set_data(t_arr, v_arr)
-            self.ax_velocity.relim()
-            self.ax_velocity.autoscale_view()
+            self.ax_velocity.relim(); self.ax_velocity.autoscale_view()
         self.ax_velocity.set_title(f"Velocity at Monitor Pt. (t={self.current_sim_time:.2f}s)")
 
         if len(self.amplitude_history_for_fft) > 1:
@@ -97,8 +110,7 @@ class WaveVisualizer:
             freqs = np.fft.rfftfreq(sig.size, d=self.dt)
             magnitude = np.abs(fft_vals) / sig.size
             self.spec_line.set_data(freqs[1:], magnitude[1:])
-            self.ax_spectrum.relim()
-            self.ax_spectrum.autoscale_view()
+            self.ax_spectrum.relim(); self.ax_spectrum.autoscale_view()
         self.ax_spectrum.set_title(f"Spectrum (t={self.current_sim_time:.2f}s)")
 
         self.fig.canvas.draw()
@@ -130,8 +142,11 @@ f[1:-1, 1:-1, 1] = f[1:-1, 1:-1, 0] + 0.5 * c**2 * (
 
 # ── visualiser and writer setup ───────────────────────────────────────────────
 vis = WaveVisualizer(sim_shape=f.shape[:2],
-                    output_video_size=(1920, 1080),
-                    dt=dt, dx=dx)
+                     output_video_size=(1920, 1080),
+                     dt=dt, dx=dx,
+                     main_plot_cmap_name="coolwarm",
+                     dynamic_z=False,          # turn off auto-scaling
+                     zlim=(-0.25, 1.0))        # same range the baseline used
 
 center_idx = npts // 2
 velocity_history = []
