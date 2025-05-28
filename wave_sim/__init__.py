@@ -38,6 +38,7 @@ from .dispersion import (
     stoneley_wave_speed,
     scholte_wave_speed,
 )
+from .collage import collage_videos
 
 __all__ = [
     "WaveSimulation",
@@ -71,4 +72,5 @@ __all__ = [
     "lamb_a0_mode",
     "stoneley_wave_speed",
     "scholte_wave_speed",
+    "collage_videos",
 ]

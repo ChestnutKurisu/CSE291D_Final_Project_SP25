@@ -35,6 +35,8 @@ from wave_sim import (
     AlfvenWave,
 )
 
+from wave_sim.collage import collage_videos
+
 
 def gaussian_source(X, Y, sigma=5.0):
     cx = X.shape[0] // 2
@@ -42,10 +44,10 @@ def gaussian_source(X, Y, sigma=5.0):
     return np.exp(-((X - cx) ** 2 + (Y - cy) ** 2) / (2 * sigma ** 2))
 
 
-def run_and_save(sim, name, steps=50):
-    ani = sim.animate(steps=steps)
+def run_and_save(sim, name, steps=50, fps=60):
+    ani = sim.animate(steps=steps, interval=1000 / fps)
     path = f"{name}.mp4"
-    ani.save(path)
+    ani.save(path, fps=fps)
     return path
 
 
@@ -81,11 +83,16 @@ def main():
         print(f"Running {name}...")
         sim = wave_cls(grid_size=512, boundary="absorbing", source_func=gaussian_source)
         outfile = os.path.join("output", name.lower())
-        files.append(run_and_save(sim, outfile, steps=300))
+        files.append(run_and_save(sim, outfile, steps=300, fps=60))
 
     print("Generated files:")
     for path in files:
         print("  ", path)
+
+    collage_out = os.path.join("output", "collage.mp4")
+    print("Creating collage video...")
+    collage_videos(files, collage_out)
+    print("Collage saved to", collage_out)
 
 
 if __name__ == "__main__":

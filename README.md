@@ -1,6 +1,6 @@
 # Wave Simulation Examples
 
-This repository contains a minimal framework for simulating and animating simple wave phenomena.
+This repository contains a minimal framework for simulating and animating simple wave phenomena.  The core solver now supports optional GPU acceleration via ``cupy`` for higher resolution and smoother animations when available.
 
 The repository now ships with implementations for **20** illustrative wave
 types collected in ``wave_sim.wave_catalog``.  These cover a mix of seismic,
@@ -46,9 +46,11 @@ sv = SVWaveSimulation()
 ux, uz = sv.displacement_components()  # in-plane components
 ```
 
-Animations can be generated via ``examples/all_waves_collage.py`` which iterates
-over every class in the catalog and writes a short MP4 file for each one into an
-``output`` directory.
+Animations can be generated via ``examples/all_waves_collage.py`` which
+iterates over every class in the catalog and writes a short MP4 file for each
+one into an ``output`` directory.  The script now also assembles these movies
+into a single collage video.  GPU acceleration via ``cupy`` is used by default
+for smoother, high-resolution output when available.
 
 
 Additional standalone scripts in the ``examples`` directory demonstrate simple
