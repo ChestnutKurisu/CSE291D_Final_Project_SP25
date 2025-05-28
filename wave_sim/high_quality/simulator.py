@@ -179,14 +179,19 @@ class WaveSimulator2D:
         ux_next = ux + vx + accel_x * (self.dt ** 2)
         uz_next = uz + vz + accel_z * (self.dt ** 2)
 
-        if self.boundary == BoundaryCondition.ABSORBING:
-            n = 32
-            taper = xp.sin(0.5 * xp.pi * xp.linspace(0, 1, n)) ** 2
-            for arr in (ux_prev, uz_prev, ux, uz):
-                arr[:n] *= taper[::-1, None]
-                arr[-n:] *= taper[:, None]
-                arr[:, :n] *= taper[None, ::-1]
-                arr[:, -n:] *= taper[None, :]
+        if self.boundary == BoundaryCondition.ABSORBING and self.sponge_thickness > 0:
+            n = self.sponge_thickness
+            if n > 0 and min(self.u.shape[:2]) > 2 * n:
+                taper = xp.sin(0.5 * xp.pi * xp.linspace(0, 1, n)) ** 2
+                for arr in (ux_prev, uz_prev, ux, uz):
+                    arr[:n, :] *= taper[::-1, None]
+                    arr[-n:, :] *= taper[:, None]
+                    arr[:, :n] *= taper[None, ::-1]
+                    arr[:, -n:] *= taper[None, :]
+            elif n > 0:
+                warnings.warn(
+                    f"Sponge thickness {n} is too large for domain size {self.u.shape}. Disabling sponge."
+                )
 
         self.u_prev[..., 0] = ux
         self.u_prev[..., 1] = uz
