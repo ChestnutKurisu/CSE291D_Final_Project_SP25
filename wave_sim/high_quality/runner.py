@@ -40,8 +40,8 @@ def simulate_wave(
     )
     sim.global_dampening = global_dampening
     vis = WaveVisualizer(
-        field_colormap=get_colormap_lut("wave1"),
-        intensity_colormap=get_colormap_lut("afmhot"),
+        field_colormap=get_colormap_lut("wave1", backend=backend),
+        intensity_colormap=get_colormap_lut("afmhot", backend=backend),
     )
     writer = imageio.get_writer(out_path, fps=fps)
     for i in range(steps):
