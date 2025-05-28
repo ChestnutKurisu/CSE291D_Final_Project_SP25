@@ -13,13 +13,20 @@ def w0(x):
     return np.exp(-100 * (x - L / 2) ** 2)
 
 
-OUTPUT_DIR = "output_1d_animations"
+DEFAULT_OUTPUT_DIR = "output_1d_animations_individual"
 
 
-def generate_animation(out_name="flexural_beam_wave.mp4"):
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
-    out_path = os.path.join(OUTPUT_DIR, out_name)
-    sim = FlexuralBeamWave(L=2.0, Nx=801, T=5.0)
+def generate_animation(output_dir=DEFAULT_OUTPUT_DIR, out_name="flexural_beam_wave.mp4"):
+    os.makedirs(output_dir, exist_ok=True)
+    out_path = os.path.join(output_dir, out_name)
+
+    sim_L = 2.0
+    sim_Nx = 801
+    sim_T = 5.0
+    dx = sim_L / (sim_Nx - 1)
+    D_val = 0.01
+    dt_val = 0.2 * dx ** 2 / np.sqrt(D_val)
+    sim = FlexuralBeamWave(D=D_val, L=sim_L, Nx=sim_Nx, T=sim_T, dt=dt_val)
     sim.initial_conditions(w0)
     writer = imageio.get_writer(out_path, fps=30)
     fig, ax = plt.subplots(figsize=(8, 4))

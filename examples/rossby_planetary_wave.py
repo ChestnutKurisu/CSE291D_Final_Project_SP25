@@ -14,12 +14,13 @@ def psi0(X, Y):
     return np.exp(-((X - Lx / 2) ** 2 + (Y - Ly / 2) ** 2) / 0.2)
 
 
-OUTPUT_DIR = "output_1d_animations"
+DEFAULT_OUTPUT_DIR = "output_1d_animations_individual"
 
 
-def generate_animation(out_name="rossby_planetary_wave.mp4"):
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
-    out_path = os.path.join(OUTPUT_DIR, out_name)
+def generate_animation(output_dir=DEFAULT_OUTPUT_DIR, out_name="rossby_planetary_wave.mp4"):
+    os.makedirs(output_dir, exist_ok=True)
+    out_path = os.path.join(output_dir, out_name)
+
     sim = RossbyPlanetaryWave(Nx=256, Ny=256, T=3.0)
     sim.initial_conditions(psi0)
     X, Y = np.meshgrid(

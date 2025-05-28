@@ -14,9 +14,8 @@ schemes in ``wave_sim.solvers``.  Surface and interface wave animations are
 **highly simplified**: they use a scalar wave model with preset speeds and do
 not capture the true dispersive or vector nature of these waves.
 
-Legacy modules under ``wave_sim2d`` have been removed.  All animations now
-use the GPU optimised utilities found in ``wave_sim.high_quality`` which are
-also able to fall back to NumPy when a CUDA device is not available.
+Legacy modules under ``wave_sim2d`` have been removed.  Animations for the ten 2‑D wave phenomena from ``wave_sim.wave_catalog`` (e.g., P, S, Rayleigh waves) are generated using the GPU‑optimised utilities in ``wave_sim.high_quality``.
+These can fall back to NumPy if a CUDA device is not available.  The other ten 1‑D or spectral wave types (e.g., Alfven, Rossby waves) from ``wave_sim.solvers`` are animated using ``matplotlib`` directly within their respective example scripts.
 
 ## Usage Notes
 
@@ -61,12 +60,9 @@ sv = SVWave()
 ux, uz = sv.get_displacement_components(frame, dx=1.0)
 ```
 
-Animations can be generated via ``examples/high_quality_collage.py`` which
-uses :mod:`wave_sim.high_quality` to produce movies for all twenty wave types.
-The script writes an MP4 per wave and then assembles the clips into a single
-collage video.  Because the 2‑D solver is a generic scalar model, only the
-body-wave examples are physically meaningful; the surface and interface waves
-are included purely for illustration.
+Animations for all twenty wave types can be generated and combined into a single collage video using ``examples/high_quality_collage.py``.
+This script utilizes :mod:`wave_sim.high_quality` for the 2‑D waves and calls the individual example scripts for the 1‑D/spectral waves.
+Because the 2‑D solver is a generic scalar model, only the body‑wave examples are physically meaningful; the surface and interface waves are included purely for illustration.
 
 
 Additional scripts in the ``examples`` directory demonstrate the specialised

@@ -12,13 +12,20 @@ def eta0(y):
     return np.exp(-((y - 2.5) / 0.5) ** 2)
 
 
-OUTPUT_DIR = "output_1d_animations"
+DEFAULT_OUTPUT_DIR = "output_1d_animations_individual"
 
 
-def generate_animation(out_name="kelvin_wave.mp4"):
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
-    out_path = os.path.join(OUTPUT_DIR, out_name)
-    sim = KelvinWave(L=10.0, Ny=800, T=10.0)
+def generate_animation(output_dir=DEFAULT_OUTPUT_DIR, out_name="kelvin_wave.mp4"):
+    os.makedirs(output_dir, exist_ok=True)
+    out_path = os.path.join(output_dir, out_name)
+
+    sim_L = 10.0
+    sim_Ny = 800
+    sim_T = 10.0
+    dy = sim_L / (sim_Ny - 1)
+    c = np.sqrt(9.81 * 1.0)
+    dt_val = 0.4 * dy / c
+    sim = KelvinWave(L=sim_L, Ny=sim_Ny, T=sim_T, dt=dt_val)
     sim.initial_conditions(eta0)
     writer = imageio.get_writer(out_path, fps=30)
     fig, ax = plt.subplots(figsize=(8, 4))

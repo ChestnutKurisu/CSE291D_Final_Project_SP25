@@ -13,13 +13,20 @@ def v0(x):
     return np.sin(2 * np.pi * x / L)
 
 
-OUTPUT_DIR = "output_1d_animations"
+DEFAULT_OUTPUT_DIR = "output_1d_animations_individual"
 
 
-def generate_animation(out_name="alfven_wave.mp4"):
-    os.makedirs(OUTPUT_DIR, exist_ok=True)
-    out_path = os.path.join(OUTPUT_DIR, out_name)
-    sim = AlfvenWave(L=2.0, Nx=800, T=2.0)
+def generate_animation(output_dir=DEFAULT_OUTPUT_DIR, out_name="alfven_wave.mp4"):
+    os.makedirs(output_dir, exist_ok=True)
+    out_path = os.path.join(output_dir, out_name)
+
+    sim_L = 2.0
+    sim_Nx = 800
+    sim_T = 2.0
+    dx = sim_L / sim_Nx
+    vA_sim = 1.0
+    dt_val = 0.5 * dx / vA_sim
+    sim = AlfvenWave(L=sim_L, Nx=sim_Nx, T=sim_T, dt=dt_val)
     sim.initial_conditions(v0)
     writer = imageio.get_writer(out_path, fps=30)
     fig, ax = plt.subplots(figsize=(8, 4))
