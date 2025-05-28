@@ -2,7 +2,7 @@
 
 from .base import WaveSimulation
 from .p_wave import PWaveSimulation
-from .s_wave import SWaveSimulation
+from .s_wave import SWaveSimulation, SHWaveSimulation, SVWaveSimulation
 from .wave_catalog import (
     PrimaryWave,
     SecondaryWave,
@@ -30,6 +30,8 @@ __all__ = [
     "WaveSimulation",
     "PWaveSimulation",
     "SWaveSimulation",
+    "SHWaveSimulation",
+    "SVWaveSimulation",
     "PrimaryWave",
     "SecondaryWave",
     "SHWave",

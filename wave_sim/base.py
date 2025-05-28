@@ -28,6 +28,7 @@ class WaveSimulation:
         self.boundary = boundary
         self.u_prev = np.zeros((self.n, self.n))
         self.u_curr = np.zeros((self.n, self.n))
+        self.time = 0.0
         cfl = self.c * self.dt / self.dx
         if cfl > 1 / np.sqrt(2):
             warnings.warn(
@@ -59,6 +60,7 @@ class WaveSimulation:
         else:
             raise ValueError(f"Unknown boundary condition {self.boundary}")
         self.u_prev, self.u_curr = self.u_curr, u_next
+        self.time += self.dt
         return u_next
 
     def initialize(self, source_pos=None, amplitude=1.0, source_func=None):
