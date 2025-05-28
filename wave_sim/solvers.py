@@ -10,6 +10,7 @@ those originally defined in :mod:`p_wave`, :mod:`s_wave` and
 from __future__ import annotations
 
 import numpy as np
+from typing import Optional
 
 from .base import WaveSimulation
 
@@ -443,11 +444,12 @@ class CapillaryWave:
         return np.array(snapshots)
 
 
-from typing import Optional
-
-
 class InternalGravityWave:
-    """Finite difference solver for a 1-D internal gravity wave."""
+    """Explicit solver for a 1-D internal gravity wave.
+
+    The scheme integrates ``psi_tt = N**2 * psi_xx`` using centred
+    differences in space and time.
+    """
 
     def __init__(self, N: float = 1.0, L: float = 2.0, Nx: int = 800, dt: Optional[float] = None, T: float = 1.0) -> None:
         c = N
@@ -497,7 +499,16 @@ class InternalGravityWave:
 
 
 class KelvinWave:
-    """Finite difference Kelvin wave along a boundary using rotating shallow water."""
+    """Kelvin wave in the rotating shallow-water system.
+
+    Solves the linearised equations
+
+    ``u_t - f v = -g eta_y``
+    ``v_t + f u = 0``
+    ``eta_t + H u_y = 0``
+
+    with centred finite differences along the ``y`` direction.
+    """
 
     def __init__(self, L: float = 10.0, Ny: int = 800, H: float = 1.0, f: float = 1.0, g: float = 9.81, dt: Optional[float] = None, T: float = 10.0) -> None:
         self.L = L
@@ -549,7 +560,10 @@ class KelvinWave:
 
 
 class RossbyPlanetaryWave:
-    """Spectral solver for the linear barotropic vorticity equation."""
+    """Spectral solver for the linear barotropic vorticity equation.
+
+    Integrates ``(∇²ψ)_t + β ψ_x = 0`` on a periodic domain using FFTs.
+    """
 
     def __init__(self, Nx: int = 256, Ny: int = 256, Lx: float = 2 * np.pi, Ly: float = 2 * np.pi, beta: float = 1.0, dt: float = 0.01, T: float = 2.0) -> None:
         self.Nx = Nx
@@ -597,7 +611,11 @@ class RossbyPlanetaryWave:
 
 
 class FlexuralBeamWave:
-    """Euler–Bernoulli beam equation w_tt + D w_xxxx = 0."""
+    """Euler–Bernoulli flexural wave in a thin beam.
+
+    This solves ``w_tt + D * w_xxxx = 0`` with second-order differences
+    in space and a leapfrog update in time.
+    """
 
     def __init__(self, D: float = 0.01, L: float = 2.0, Nx: int = 801, dt: Optional[float] = None, T: float = 5.0) -> None:
         self.D = D
@@ -641,7 +659,10 @@ class FlexuralBeamWave:
 
 
 class AlfvenWave:
-    """1-D Alfvén wave along a magnetic field."""
+    """One-dimensional Alfvén wave along a uniform magnetic field.
+
+    The update solves ``v_tt = v_A**2 * v_xx`` with Dirichlet boundaries.
+    """
 
     def __init__(self, B0: float = 1.0, rho: float = 1.0, mu0: float = 1.0, L: float = 2.0, Nx: int = 800, dt: Optional[float] = None, T: float = 2.0) -> None:
         self.B0 = B0
