@@ -1,8 +1,10 @@
 import numpy as np
 try:
     import cupy as cp
+    import cupyx.scipy.ndimage as cnd
 except Exception:  # pragma: no cover - optional dependency
-    cp = None
+    cp = None  # type: ignore
+    cnd = None  # type: ignore
 
 from ..backend import get_array_module
 
@@ -85,28 +87,93 @@ class WaveVisualizer:
         self.intensity = self.intensity * t + (self.field ** 2) * (1.0 - t)
         self.visualization_image = sim.render_visualization()
 
-    def render_intensity(self, brightness_scale=1.0, exp=0.5, overlay_visualization=True):
+    def render_intensity(
+        self,
+        brightness_scale: float = 1.0,
+        exp: float = 0.5,
+        overlay_visualization: bool = True,
+        size: tuple[int, int] | None = None,
+    ) -> np.ndarray:
         xp = cp if cp is not None and isinstance(self.intensity, cp.ndarray) else np
-        gray = (xp.clip((self.intensity ** exp) * brightness_scale, 0.0, 1.0) * 254.0).astype(np.uint8)
+        gray = (
+            xp.clip((self.intensity ** exp) * brightness_scale, 0.0, 1.0) * 254.0
+        ).astype(np.uint8)
         if xp is cp:
             img = xp.take(self.intensity_colormap, gray, axis=0)
-            img = img.get()
+            if size is not None and cnd is not None:
+                zoom_factors = (
+                    size[1] / img.shape[0],
+                    size[0] / img.shape[1],
+                    1,
+                )
+                img = cnd.zoom(img, zoom_factors, order=1)
+            img = img[..., ::-1]
+            if overlay_visualization:
+                vis = cp.asarray(self.visualization_image)
+                if size is not None and cnd is not None and vis.shape[:2] != size:
+                    zoom_factors = (
+                        size[1] / vis.shape[0],
+                        size[0] / vis.shape[1],
+                        1,
+                    )
+                    vis = cnd.zoom(vis, zoom_factors, order=1)
+                img = cp.clip(img.astype(cp.int16) + vis.astype(cp.int16), 0, 255).astype(cp.uint8)
+            return img.get()
         else:
             img = np.take(self.intensity_colormap, gray, axis=0)
-        img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
-        if overlay_visualization:
-            img = cv2.add(img, self.visualization_image)
-        return img
+            img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+            if size is not None:
+                img = cv2.resize(img, size, interpolation=cv2.INTER_LINEAR)
+            if overlay_visualization:
+                vis = (
+                    cv2.resize(self.visualization_image, size, interpolation=cv2.INTER_LINEAR)
+                    if size is not None and self.visualization_image.shape[:2] != size
+                    else self.visualization_image
+                )
+                img = cv2.add(img, vis)
+            return img
 
-    def render_field(self, brightness_scale=1.0, overlay_visualization=True):
+    def render_field(
+        self,
+        brightness_scale: float = 1.0,
+        overlay_visualization: bool = True,
+        size: tuple[int, int] | None = None,
+    ) -> np.ndarray:
         xp = cp if cp is not None and isinstance(self.field, cp.ndarray) else np
-        gray = (xp.clip(self.field * brightness_scale, -1.0, 1.0) * 127 + 127).astype(np.uint8)
+        gray = (
+            xp.clip(self.field * brightness_scale, -1.0, 1.0) * 127 + 127
+        ).astype(np.uint8)
         if xp is cp:
             img = xp.take(self.field_colormap, gray, axis=0)
-            img = img.get()
+            if size is not None and cnd is not None:
+                zoom_factors = (
+                    size[1] / img.shape[0],
+                    size[0] / img.shape[1],
+                    1,
+                )
+                img = cnd.zoom(img, zoom_factors, order=1)
+            img = img[..., ::-1]
+            if overlay_visualization:
+                vis = cp.asarray(self.visualization_image)
+                if size is not None and cnd is not None and vis.shape[:2] != size:
+                    zoom_factors = (
+                        size[1] / vis.shape[0],
+                        size[0] / vis.shape[1],
+                        1,
+                    )
+                    vis = cnd.zoom(vis, zoom_factors, order=1)
+                img = cp.clip(img.astype(cp.int16) + vis.astype(cp.int16), 0, 255).astype(cp.uint8)
+            return img.get()
         else:
             img = np.take(self.field_colormap, gray, axis=0)
-        img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
-        if overlay_visualization:
-            img = cv2.add(img, self.visualization_image)
-        return img
+            img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
+            if size is not None:
+                img = cv2.resize(img, size, interpolation=cv2.INTER_LINEAR)
+            if overlay_visualization:
+                vis = (
+                    cv2.resize(self.visualization_image, size, interpolation=cv2.INTER_LINEAR)
+                    if size is not None and self.visualization_image.shape[:2] != size
+                    else self.visualization_image
+                )
+                img = cv2.add(img, vis)
+            return img
