@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import numpy as np
 
-from .high_quality import ConstantSpeed, PointSource
+from .high_quality import ConstantSpeed, PointSource, ConstantElasticSpeed
+from .elastic2d import ElasticWaveSimulator2D
+from .core.boundary import BoundaryCondition
 from .initial_conditions import gaussian_2d
 
 # --- NEW: analytical phase-speed helpers ------------------------------------
@@ -62,6 +64,61 @@ class Wave2DConfig:
         return builder
 
 
+class ScalarWave2D:
+    """Simple finite-difference solver for the scalar 2-D wave equation."""
+
+    def __init__(self, c: float, width: int, height: int, *, dx: float = 1.0, dt: float = 1.0,
+                 boundary: BoundaryCondition = BoundaryCondition.REFLECTIVE) -> None:
+        self.c = float(c)
+        self.width = int(width)
+        self.height = int(height)
+        self.dx = float(dx)
+        self.dt = float(dt)
+        self.boundary = boundary
+
+        self.u = np.zeros((self.height, self.width), dtype=float)
+        self.u_prev = np.zeros_like(self.u)
+        self.u_next = np.zeros_like(self.u)
+
+    def initial_conditions(self, func) -> None:
+        X, Z = np.meshgrid(np.arange(self.width) * self.dx,
+                           np.arange(self.height) * self.dx, indexing="xy")
+        self.u[:] = func(X, Z)
+        self.u_prev[:] = self.u
+
+    def _apply_bc(self, arr: np.ndarray) -> None:
+        if self.boundary == BoundaryCondition.REFLECTIVE:
+            arr[0, :] = arr[1, :]
+            arr[-1, :] = arr[-2, :]
+            arr[:, 0] = arr[:, 1]
+            arr[:, -1] = arr[:, -2]
+
+    def step(self) -> None:
+        r = (self.c * self.dt / self.dx) ** 2
+        u = self.u
+        up = self.u_prev
+        un = self.u_next
+        un[1:-1, 1:-1] = (
+            2.0 * u[1:-1, 1:-1]
+            - up[1:-1, 1:-1]
+            + r * (
+                u[2:, 1:-1]
+                + u[:-2, 1:-1]
+                + u[1:-1, 2:]
+                + u[1:-1, :-2]
+                - 4.0 * u[1:-1, 1:-1]
+            )
+        )
+        self._apply_bc(un)
+        self.u_prev, self.u, self.u_next = self.u, un, up
+
+    def get_field(self) -> np.ndarray:
+        return self.u
+
+    def energy(self) -> float:
+        return float(np.sum(self.u ** 2))
+
+
 class PrimaryWave(Wave2DConfig):
     """Compressional body wave."""
 
@@ -95,58 +152,153 @@ class SVWave(Wave2DConfig):
         return ux, uz
 
 
-class RayleighWave(Wave2DConfig):
-    """NOTE: placeholder using the scalar wave equation with ``c`` ≈ 1300 m/s."""
+class RayleighWave:
+    """Simple elastic Rayleigh surface wave solver."""
 
-    def __init__(self, **kw):
-        c_R = rayleigh_wave_speed(_ALPHA, _BETA)
-        super().__init__(c=c_R, **kw)
+    def __init__(self, width: int = 200, height: int = 100, *, dx: float = 1.0, dt: float = 0.5) -> None:
+        cp = _ALPHA
+        cs = _BETA
+        objects = [ConstantElasticSpeed(cp, cs)]
+        self.sim = ElasticWaveSimulator2D(width, height, objects, backend="cpu", dx=dx, dt=dt)
+        xp = self.sim.xp
+        z = xp.arange(height) * dx
+        eigen = xp.exp(-z / 20.0)
+        self.sim.u[..., 1] = eigen[:, None]
+        self.sim.u_prev[...] = self.sim.u
 
+    def step(self) -> None:
+        self.sim.update_field()
 
-class LoveWave(Wave2DConfig):
-    """NOTE: placeholder; scalar wave with speed from the Love-mode estimate."""
+    def get_displacement(self) -> tuple[np.ndarray, np.ndarray]:
+        ux, uz = self.sim.get_displacement()
+        return np.asarray(ux), np.asarray(uz)
 
-    def __init__(self, h: float = 100.0, **kw):
-        c_L = love_wave_dispersion(freq=2*np.pi*10,
-                                   beta1=_BETA*0.8,
-                                   beta2=_BETA, h=h, n_modes=1)[0]
-        super().__init__(c=c_L, **kw)
-
-
-class LambS0Mode(Wave2DConfig):
-    """NOTE: placeholder; scalar wave with speed from Lamb S0 estimate."""
-
-    def __init__(self, plate_h: float = 5.0, **kw):
-        c = lamb_s0_mode(freq=2*np.pi*5, alpha=_ALPHA, beta=_BETA,
-                         thickness=plate_h)
-        super().__init__(c=c or 2000.0, **kw)
-
-
-class LambA0Mode(Wave2DConfig):
-    """NOTE: placeholder; scalar wave with speed from Lamb A0 estimate."""
-
-    def __init__(self, plate_h: float = 5.0, **kw):
-        c = lamb_a0_mode(freq=2*np.pi*5, alpha=_ALPHA, beta=_BETA,
-                         thickness=plate_h)
-        super().__init__(c=c or 1000.0, **kw)
+    def energy(self) -> float:
+        ux, uz = self.get_displacement()
+        return float(np.sum(ux ** 2 + uz ** 2))
 
 
-class StoneleyWave(Wave2DConfig):
-    """NOTE: placeholder; scalar wave with speed from Stoneley estimate."""
+class LoveWave:
+    """Shear-horizontal surface wave solver using a scalar formulation."""
 
-    def __init__(self, **kw):
-        c = stoneley_wave_speed(_ALPHA, _BETA, _RHO,
-                                _ALPHA*0.6, _BETA*0.6, _RHO*1.2)
-        super().__init__(c=c or 1200.0, **kw)
+    def __init__(self, width: int = 200, height: int = 100, *, dx: float = 1.0, dt: float = 0.5) -> None:
+        self.solver = ScalarWave2D(_BETA, width, height, dx=dx, dt=dt)
+        def init_func(X, Z):
+            return np.exp(-Z / 20.0)
+        self.solver.initial_conditions(init_func)
+
+    def step(self) -> None:
+        self.solver.step()
+
+    def get_displacement(self) -> np.ndarray:
+        return self.solver.get_field()
+
+    def energy(self) -> float:
+        return self.solver.energy()
 
 
-class ScholteWave(Wave2DConfig):
-    """NOTE: placeholder; scalar wave with speed from Scholte estimate."""
+class LambS0Mode:
+    """Symmetric Lamb mode solver using the elastic formulation."""
 
-    def __init__(self, **kw):
-        c = scholte_wave_speed(_ALPHA, _BETA, _RHO,
-                               _WATER_C, _WATER_RHO)
-        super().__init__(c=c or 900.0, **kw)
+    def __init__(self, width: int = 200, height: int = 50, *, dx: float = 1.0, dt: float = 0.5) -> None:
+        objects = [ConstantElasticSpeed(_ALPHA, _BETA)]
+        self.sim = ElasticWaveSimulator2D(width, height, objects, backend="cpu", dx=dx, dt=dt)
+        xp = self.sim.xp
+        z = xp.arange(height) * dx
+        eig = xp.cos(np.pi * (z - z.mean()) / height)
+        self.sim.u[..., 1] = eig[:, None]
+        self.sim.u_prev[...] = self.sim.u
+
+    def step(self) -> None:
+        self.sim.update_field()
+
+    def get_displacement(self) -> tuple[np.ndarray, np.ndarray]:
+        ux, uz = self.sim.get_displacement()
+        return np.asarray(ux), np.asarray(uz)
+
+    def energy(self) -> float:
+        ux, uz = self.get_displacement()
+        return float(np.sum(ux ** 2 + uz ** 2))
+
+
+class LambA0Mode:
+    """Antisymmetric Lamb mode solver using the elastic formulation."""
+
+    def __init__(self, width: int = 200, height: int = 50, *, dx: float = 1.0, dt: float = 0.5) -> None:
+        objects = [ConstantElasticSpeed(_ALPHA, _BETA)]
+        self.sim = ElasticWaveSimulator2D(width, height, objects, backend="cpu", dx=dx, dt=dt)
+        xp = self.sim.xp
+        z = xp.arange(height) * dx
+        eig = xp.sin(np.pi * (z - z.mean()) / height)
+        self.sim.u[..., 1] = eig[:, None]
+        self.sim.u_prev[...] = self.sim.u
+
+    def step(self) -> None:
+        self.sim.update_field()
+
+    def get_displacement(self) -> tuple[np.ndarray, np.ndarray]:
+        ux, uz = self.sim.get_displacement()
+        return np.asarray(ux), np.asarray(uz)
+
+    def energy(self) -> float:
+        ux, uz = self.get_displacement()
+        return float(np.sum(ux ** 2 + uz ** 2))
+
+
+class StoneleyWave:
+    """Interface wave between two elastic half spaces."""
+
+    def __init__(self, width: int = 200, height: int = 100, *, dx: float = 1.0, dt: float = 0.5) -> None:
+        self.sim = ElasticWaveSimulator2D(width, height, [], backend="cpu", dx=dx, dt=dt)
+        mid = height // 2
+        self.sim.c[:mid, :, 0] = _ALPHA
+        self.sim.c[:mid, :, 1] = _BETA
+        self.sim.c[mid:, :, 0] = _ALPHA * 0.6
+        self.sim.c[mid:, :, 1] = _BETA * 0.6
+        xp = self.sim.xp
+        z = xp.arange(height) * dx
+        eig = xp.exp(-abs(z - mid * dx) / 20.0)
+        self.sim.u[..., 1] = eig[:, None]
+        self.sim.u_prev[...] = self.sim.u
+
+    def step(self) -> None:
+        self.sim.update_field()
+
+    def get_displacement(self) -> tuple[np.ndarray, np.ndarray]:
+        ux, uz = self.sim.get_displacement()
+        return np.asarray(ux), np.asarray(uz)
+
+    def energy(self) -> float:
+        ux, uz = self.get_displacement()
+        return float(np.sum(ux ** 2 + uz ** 2))
+
+
+class ScholteWave:
+    """Interface wave at a fluid/solid boundary."""
+
+    def __init__(self, width: int = 200, height: int = 100, *, dx: float = 1.0, dt: float = 0.5) -> None:
+        self.sim = ElasticWaveSimulator2D(width, height, [], backend="cpu", dx=dx, dt=dt)
+        mid = height // 2
+        self.sim.c[:mid, :, 0] = _ALPHA
+        self.sim.c[:mid, :, 1] = _BETA
+        self.sim.c[mid:, :, 0] = _WATER_C
+        self.sim.c[mid:, :, 1] = 1e-6
+        xp = self.sim.xp
+        z = xp.arange(height) * dx
+        eig = xp.exp(-abs(z - mid * dx) / 20.0)
+        self.sim.u[..., 1] = eig[:, None]
+        self.sim.u_prev[...] = self.sim.u
+
+    def step(self) -> None:
+        self.sim.update_field()
+
+    def get_displacement(self) -> tuple[np.ndarray, np.ndarray]:
+        ux, uz = self.sim.get_displacement()
+        return np.asarray(ux), np.asarray(uz)
+
+    def energy(self) -> float:
+        ux, uz = self.get_displacement()
+        return float(np.sum(ux ** 2 + uz ** 2))
 
 
 

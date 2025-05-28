@@ -1,13 +1,13 @@
-"""Rayleigh surface wave example using the elastic solver."""
+"""Rayleigh surface wave example using the new solver."""
 
-from wave_sim.elastic2d import rayleigh_surface_demo
+from wave_sim.wave_catalog import RayleighWave
 
 
 def generate_animation(steps: int = 10):
     """Run a short demo returning final displacement field."""
-    sim = rayleigh_surface_demo()
+    sim = RayleighWave()
     for _ in range(steps):
-        sim.update_field()
+        sim.step()
     return sim.get_displacement()
 
 
