@@ -5,7 +5,7 @@ from tqdm import tqdm
 from .visualizer import WaveVisualizer
 
 
-def run_simulation(out_path="wave_2d.mp4", steps=199):
+def run_simulation(out_path="wave_2d.mp4", steps=19):
     # physical / numerical parameters
     L = 2.0  # enlarged domain
     dx = 0.01
@@ -35,7 +35,8 @@ def run_simulation(out_path="wave_2d.mp4", steps=199):
                          dt=dt, dx=dx,
                          main_plot_cmap_name="Spectral",
                          dynamic_z=False,
-                         zlim=(-0.25, 1.0))
+                         zlim=(-0.25, 1.0),
+                         font_size=16)
 
     center_idx = npts // 2
     velocity_history = []
