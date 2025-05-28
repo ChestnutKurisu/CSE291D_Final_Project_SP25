@@ -13,6 +13,10 @@ from .high_quality import (
     StaticImageScene,
     StrainRefractiveIndex,
     StaticRefractiveIndexPolygon,
+    LineSource,
+    GaussianBlobSource,
+    ModulatorSmoothSquare,
+    ModulatorDiscreteSignal,
 )
 from .core.boundary import BoundaryCondition
 from .wave_catalog import (
@@ -65,6 +69,10 @@ __all__ = [
     "StaticImageScene",
     "StrainRefractiveIndex",
     "StaticRefractiveIndexPolygon",
+    "LineSource",
+    "GaussianBlobSource",
+    "ModulatorSmoothSquare",
+    "ModulatorDiscreteSignal",
     "BoundaryCondition",
     "gaussian_1d",
     "gaussian_2d",
