@@ -7,6 +7,8 @@ types collected in ``wave_sim.wave_catalog``.  These cover a mix of seismic,
 acoustic and fluid phenomena while all reusing the same underlying 2‑D solver
 for simplicity.
 
+A new GPU-based module ``wave_sim2d`` provides a more advanced simulator with scene objects for customised wave speed, dampening and sources.  The accompanying ``examples/all_waves_collage.py`` generates high-resolution animations for every wave type and merges them into a single collage video.
+
 ## Usage Notes
 
 `WaveSimulation` now supports several boundary conditions and flexible initial

@@ -1,98 +1,51 @@
-"""Generate animations for a subset of wave classes.
-
-This script iterates over a curated set of simulations defined in
-``wave_sim.wave_catalog`` and writes a short MP4 file for each one into an
-``output`` directory.  The results are purely illustrative.
-"""
+"""Generate animations for all wave types using the GPU-based simulator."""
 
 import os
-import numpy as np
+import cv2
 
-import matplotlib
-
-matplotlib.use("Agg")  # allow running without a display
-
-from wave_sim import (
-    PrimaryWave,
-    SecondaryWave,
-    SHWave,
-    SVWave,
-    RayleighWave,
-    LoveWave,
-    LambS0Mode,
-    LambA0Mode,
-    StoneleyWave,
-    ScholteWave,
-    PlaneAcousticWave,
-    SphericalAcousticWave,
-    DeepWaterGravityWave,
-    ShallowWaterGravityWave,
-    CapillaryWave,
-    InternalGravityWave,
-    KelvinWave,
-    RossbyPlanetaryWave,
-    FlexuralBeamWave,
-    AlfvenWave,
-)
-
-from wave_sim.collage import collage_videos
+from wave_sim2d.wave_simulation import WaveSimulator2D
+from wave_sim2d.wave_visualizer import WaveVisualizer, get_colormap_lut
+from wave_sim2d.wave_catalog2d import wave_catalog_list
+from wave_sim2d.collage import collage_videos
 
 
-def gaussian_source(X, Y, sigma=5.0):
-    cx = X.shape[0] // 2
-    cy = Y.shape[1] // 2
-    return np.exp(-((X - cx) ** 2 + (Y - cy) ** 2) / (2 * sigma ** 2))
+def generate_wave_animation(wave_name, scene_constructor, width=512, height=512, steps=600, dt=1.0, fps=60, out_dir="output"):
+    os.makedirs(out_dir, exist_ok=True)
+    outpath = os.path.join(out_dir, f"{wave_name}.mp4")
+    scene_objs = scene_constructor(width, height)
+    simulator = WaveSimulator2D(width=width, height=height, scene_objects=scene_objs, dt=dt, global_dampening=1.0)
 
+    field_lut = get_colormap_lut("RdBu", size=256, invert=True)
+    intens_lut = get_colormap_lut("afmhot", size=256, invert=False)
+    visualizer = WaveVisualizer(field_colormap=field_lut, intensity_colormap=intens_lut)
 
-def run_and_save(sim, name, steps=50, fps=60):
-    ani = sim.animate(steps=steps, interval=1000 / fps)
-    path = f"{name}.mp4"
-    ani.save(path, fps=fps)
-    return path
+    fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+    videowriter = cv2.VideoWriter(outpath, fourcc, fps, (width, height))
+
+    for step_i in range(steps):
+        simulator.update_scene()
+        simulator.update_field()
+        visualizer.update(simulator.get_field())
+        frame_bgr = visualizer.render_field(brightness_scale=1.0, overlay=None)
+        videowriter.write(frame_bgr)
+
+    videowriter.release()
+    print(f"Saved {outpath}")
+    return outpath
 
 
 def main():
-    os.makedirs("output", exist_ok=True)
+    wave_defs = wave_catalog_list()
+    out_dir = "output"
+    generated_files = []
 
-    wave_classes = [
-        PrimaryWave,
-        SecondaryWave,
-        SHWave,
-        SVWave,
-        RayleighWave,
-        LoveWave,
-        LambS0Mode,
-        LambA0Mode,
-        StoneleyWave,
-        ScholteWave,
-        PlaneAcousticWave,
-        SphericalAcousticWave,
-        DeepWaterGravityWave,
-        ShallowWaterGravityWave,
-        CapillaryWave,
-        InternalGravityWave,
-        KelvinWave,
-        RossbyPlanetaryWave,
-        FlexuralBeamWave,
-        AlfvenWave,
-    ]
+    for wave_name, constructor in wave_defs:
+        path = generate_wave_animation(wave_name, constructor, width=512, height=512, steps=300, dt=1.0, fps=60, out_dir=out_dir)
+        generated_files.append(path)
 
-    files = []
-    for wave_cls in wave_classes:
-        name = wave_cls.__name__
-        print(f"Running {name}...")
-        sim = wave_cls(grid_size=512, boundary="absorbing", source_func=gaussian_source)
-        outfile = os.path.join("output", name.lower())
-        files.append(run_and_save(sim, outfile, steps=300, fps=60))
-
-    print("Generated files:")
-    for path in files:
-        print("  ", path)
-
-    collage_out = os.path.join("output", "collage.mp4")
-    print("Creating collage video...")
-    collage_videos(files, collage_out)
-    print("Collage saved to", collage_out)
+    collage_path = os.path.join(out_dir, "all_waves_collage.mp4")
+    collage_videos(generated_files, collage_path, grid=None, fps=60, out_width=1920, out_height=1080)
+    print("Collage saved to", collage_path)
 
 
 if __name__ == "__main__":
