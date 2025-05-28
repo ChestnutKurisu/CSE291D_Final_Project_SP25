@@ -47,51 +47,6 @@ class PointSource(SceneObject):
             cv2.circle(image, (self.x, self.y), 3, (50, 50, 50), -1)
 
 
-class GaussianBlobSource(SceneObject):
-    """Soft circular source using a Gaussian envelope."""
-
-    def __init__(self, x, y, sigma_px, freq, amplitude=1.0):
-        self.x = int(x)
-        self.y = int(y)
-        self.sigma = float(sigma_px)
-        self.freq = float(freq)
-        self.amplitude = float(amplitude)
-
-        size = int(self.sigma * 6) + 1
-        half = size // 2
-        ax = XP.arange(-half, half + 1)
-        xx, yy = XP.meshgrid(ax, ax)
-        g = XP.exp(-(xx ** 2 + yy ** 2) / (2 * self.sigma ** 2))
-        self.kernel = g.astype(XP.float32)
-        self.kernel_size = size
-
-    def render(self, field, wave_speed_field, dampening_field):
-        pass
-
-    def update_field(self, field, t):
-        xp = XP
-        val = xp.sin(t * self.freq) * self.amplitude
-        half = self.kernel_size // 2
-
-        y0 = max(self.y - half, 0)
-        x0 = max(self.x - half, 0)
-        y1 = min(self.y + half + 1, field.shape[0])
-        x1 = min(self.x + half + 1, field.shape[1])
-
-        ky0 = half - (self.y - y0)
-        kx0 = half - (self.x - x0)
-        ky1 = ky0 + (y1 - y0)
-        kx1 = kx0 + (x1 - x0)
-
-        patch = field[y0:y1, x0:x1]
-        k = self.kernel[ky0:ky1, kx0:kx1]
-        patch *= (1.0 - k)
-        patch += val * k
-        field[y0:y1, x0:x1] = patch
-
-    def render_visualization(self, image):
-        cv2.circle(image, (self.x, self.y), int(self.sigma), (50, 50, 50), 1)
-
 class ConstantSpeed(SceneObject):
     def __init__(self, speed):
         self.speed = float(speed)
