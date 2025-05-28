@@ -320,7 +320,6 @@ class ModulatorDiscreteSignal:
         s1 = self.samples[max(min(idx1, len(self.samples) - 1), 0)]
         return (1.0 - frac) * s0 + frac * s1
 
-
 def gaussian_kernel(size, sigma):
     ax = np.linspace(-(size-1)/2., (size-1)/2., size)
     gauss = np.exp(-0.5 * ax**2 / sigma**2)
@@ -367,6 +366,3 @@ class MovingCharge(SceneObject):
             k = self.kernel[ky0:ky1, kx0:kx1]
             patch += fade_in * 0.25 * k
             field[y0:y1, x0:x1] = patch
-
-
-
