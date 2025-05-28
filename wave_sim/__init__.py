@@ -1,11 +1,19 @@
 """Convenience imports for the wave simulation package."""
 
-from .base import WaveSimulation
-from .solvers import (
-    PWaveSimulation,
-    SWaveSimulation,
-    SHWaveSimulation,
-    SVWaveSimulation,
+from .high_quality import (
+    WaveSimulator2D,
+    SceneObject,
+    WaveVisualizer,
+    get_colormap_lut,
+    simulate_wave,
+    PointSource,
+    ConstantSpeed,
+    StaticDampening,
+    StaticRefractiveIndex,
+    StaticImageScene,
+    StrainRefractiveIndex,
+    StaticRefractiveIndexPolygon,
+    StaticRefractiveIndexBox,
 )
 from .wave_catalog import (
     PrimaryWave,
@@ -41,11 +49,19 @@ from .dispersion import (
 from .collage import collage_videos
 
 __all__ = [
-    "WaveSimulation",
-    "PWaveSimulation",
-    "SWaveSimulation",
-    "SHWaveSimulation",
-    "SVWaveSimulation",
+    "WaveSimulator2D",
+    "SceneObject",
+    "WaveVisualizer",
+    "get_colormap_lut",
+    "simulate_wave",
+    "PointSource",
+    "ConstantSpeed",
+    "StaticDampening",
+    "StaticRefractiveIndex",
+    "StaticImageScene",
+    "StrainRefractiveIndex",
+    "StaticRefractiveIndexPolygon",
+    "StaticRefractiveIndexBox",
     "PrimaryWave",
     "SecondaryWave",
     "SHWave",

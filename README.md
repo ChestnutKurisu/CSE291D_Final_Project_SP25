@@ -21,17 +21,17 @@ also able to fall back to NumPy when a CUDA device is not available.
 
 ## Usage Notes
 
-`WaveSimulation` now supports several boundary conditions and flexible initial
+`WaveSimulator2D` supports several boundary conditions and flexible initial
 sources. The boundary condition can be selected when constructing a simulation
-via the `boundary` keyword with one of:
+via the `boundary_condition` keyword with one of:
 
 * `"reflective"` – zero normal derivative at the edges (mirror boundary)
 * `"periodic"` – domain repeats at the edges
 * `"absorbing"` – damped sponge layer near the borders
 
-The initial disturbance can be provided through `initialize(source_func=...)`
-where `source_func` is a function of coordinate arrays ``(X, Y)``. For example,
-a Gaussian pulse centered in the domain can be created with:
+The initial disturbance is passed via ``initial_field`` when creating a
+`WaveSimulator2D` or through the ``scene_builder`` used by
+`simulate_wave`. A Gaussian pulse centered in the domain can be created with:
 
 ```python
 def gaussian(X, Y, sigma=5):
@@ -39,23 +39,26 @@ def gaussian(X, Y, sigma=5):
     y0 = Y.shape[1] // 2
     return np.exp(-((X - x0)**2 + (Y - y0)**2) / (2 * sigma**2))
 
-sim = PWaveSimulation(boundary="absorbing")
-sim.initialize(source_func=gaussian)
+from wave_sim.high_quality import simulate_wave, ConstantSpeed
+from wave_sim.wave_catalog import PrimaryWave, gaussian_initial_condition
+
+scene = PrimaryWave(initial_condition=gaussian).get_scene_builder()
+simulate_wave(scene, "out.mp4", steps=200, resolution=(256, 256))
 ```
 
 The solver emits a warning if the CFL condition ``c * dt / dx`` exceeds
 ``1 / sqrt(2)`` to help maintain stability.
 
-For the specialised shear-wave solvers ``SHWaveSimulation`` and
-``SVWaveSimulation`` the physical displacement can be retrieved directly from
-the simulation state:
+For the specialised shear-wave configurations ``SHWave`` and ``SVWave`` the
+physical displacement can be retrieved from simulation frames via helper
+methods:
 
 ```python
-sh = SHWaveSimulation()
-uy = sh.displacement()               # out-of-plane displacement
+sh = SHWave()
+uy = sh.get_displacement_y(frame)
 
-sv = SVWaveSimulation()
-ux, uz = sv.displacement_components()  # in-plane components
+sv = SVWave()
+ux, uz = sv.get_displacement_components(frame, dx=1.0)
 ```
 
 Animations can be generated via ``examples/high_quality_collage.py`` which

@@ -23,15 +23,14 @@ WAVE_CLASSES = [
 
 
 def get_wave_speed(cls):
-    obj = cls(grid_size=8, backend="cpu")
-    return getattr(obj, "c", 1.0)
+    return getattr(cls, "default_speed", 1.0)
 
 
 def build_scene_factory(speed):
     def builder(resolution):
         w, h = resolution
         objs = [ConstantSpeed(speed), PointSource(w // 2, h // 2, freq=0.1, amplitude=5.0)]
-        return objs, w, h
+        return objs, w, h, None
     return builder
 
 
