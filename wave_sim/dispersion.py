@@ -73,15 +73,17 @@ def love_wave_dispersion(
         c_guess_bounds = (beta1 + 1e-3, beta2 - 1e-3)
 
     def love_equation(c):
-        if c >= beta2 or c <= beta1:
+        if not (beta1 < c < beta2):
             return 1e6
         k = omega / c
-        root1 = beta1 ** 2 / c ** 2 - 1
-        root2 = beta2 ** 2 / c ** 2 - 1
-        if root1 < 0 or root2 < 0:
+        term1 = (c ** 2 / beta1 ** 2) - 1.0
+        term2 = 1.0 - (c ** 2 / beta2 ** 2)
+        if term1 <= 0 or term2 <= 0:
             return 1e6
-        lhs = np.tan(k * h * np.sqrt(root1))
-        rhs = np.sqrt(root2) / np.sqrt(1 - beta1 ** 2 / c ** 2)
+        ky1_over_k = np.sqrt(term1)
+        ay2_over_k = np.sqrt(term2)
+        lhs = np.tan(k * h * ky1_over_k)
+        rhs = ay2_over_k / ky1_over_k
         return lhs - rhs
 
     c_min, c_max = c_guess_bounds
@@ -136,13 +138,21 @@ def lamb_s0_mode(
 
     def dispersion(c):
         k = omega / c
-        p2 = k ** 2 - (omega / alpha) ** 2
-        q2 = k ** 2 - (omega / beta) ** 2
-        p = np.sqrt(abs(p2)) * (1 if p2 >= 0 else 1j)
-        q = np.sqrt(abs(q2)) * (1 if q2 >= 0 else 1j)
-        lhs = np.tan(p * thickness) * np.tan(q * thickness)
-        rhs = (4 * k ** 2 * p * q) / ((k ** 2 - q ** 2) ** 2)
-        return lhs - rhs
+        p_sq = (omega / alpha) ** 2 - k ** 2
+        q_sq = (omega / beta) ** 2 - k ** 2
+        p = np.sqrt(abs(p_sq)) * (1 if p_sq >= 0 else 1j)
+        q = np.sqrt(abs(q_sq)) * (1 if q_sq >= 0 else 1j)
+        tan_ph = np.tan(p * thickness)
+        tan_qh = np.tan(q * thickness)
+        if abs(tan_ph) < 1e-12:
+            return 1e6
+        lhs = tan_qh / tan_ph
+        denom = (k ** 2 - q_sq) ** 2
+        if abs(denom) < 1e-12:
+            return 1e6
+        rhs = - (4 * k ** 2 * p * q) / denom
+        val = lhs - rhs
+        return val.real if isinstance(val, complex) else val
 
     c_vals = np.linspace(c_min, c_max, 200)
     f_vals = [dispersion(cv) for cv in c_vals]
@@ -174,13 +184,21 @@ def lamb_a0_mode(
 
     def dispersion(c):
         k = omega / c
-        p2 = k ** 2 - (omega / alpha) ** 2
-        q2 = k ** 2 - (omega / beta) ** 2
-        p = np.sqrt(abs(p2)) * (1 if p2 >= 0 else 1j)
-        q = np.sqrt(abs(q2)) * (1 if q2 >= 0 else 1j)
-        lhs = np.tan(p * thickness) * np.tan(q * thickness)
-        rhs = -(4 * k ** 2 * p * q) / ((k ** 2 - q ** 2) ** 2)
-        return lhs - rhs
+        p_sq = (omega / alpha) ** 2 - k ** 2
+        q_sq = (omega / beta) ** 2 - k ** 2
+        p = np.sqrt(abs(p_sq)) * (1 if p_sq >= 0 else 1j)
+        q = np.sqrt(abs(q_sq)) * (1 if q_sq >= 0 else 1j)
+        tan_ph = np.tan(p * thickness)
+        tan_qh = np.tan(q * thickness)
+        if abs(tan_ph) < 1e-12:
+            return 1e6
+        lhs = tan_qh / tan_ph
+        denom = 4 * k ** 2 * p * q
+        if abs(denom) < 1e-12:
+            return 1e6
+        rhs = -((k ** 2 - q_sq) ** 2) / denom
+        val = lhs - rhs
+        return val.real if isinstance(val, complex) else val
 
     c_vals = np.linspace(c_min, c_max, 200)
     f_vals = [dispersion(cv) for cv in c_vals]

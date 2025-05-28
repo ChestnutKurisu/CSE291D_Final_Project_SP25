@@ -2,12 +2,18 @@
 
 This repository contains a minimal framework for simulating and animating simple wave phenomena.  The code has recently been consolidated around a single high quality pipeline.  The core solver now supports optional GPU acceleration via ``cupy`` for higher resolution and smoother animations when available.
 
+The focus of this repository is purely on wave propagation. Earlier project
+notes about simulating elastic bodies via incremental potentials and Hessians
+are not implemented here.
+
 The repository now ships with implementations for **20** illustrative wave
 types collected in ``wave_sim.wave_catalog``.  These cover a mix of seismic,
-acoustic and fluid phenomena while all reusing the same underlying 2‑D solver
-for simplicity.  Surface and interface waves (Rayleigh, Love, Stoneley,
-Scholte, etc.) are provided only as minimal placeholders that reuse the scalar
-solver with preset speeds; they do not model full elastic boundary conditions.
+acoustic and fluid phenomena.  Basic body waves share a common 2‑D finite
+difference solver, while other entries use one‑dimensional or spectral
+schemes specialised for each equation.  Surface and interface waves
+(Rayleigh, Love, Lamb, Stoneley, Scholte) are **highly simplified**: they are
+animated using a generic scalar wave model with preset speeds and do **not**
+capture the true dispersive or vector nature of these waves.
 
 Legacy modules under ``wave_sim2d`` have been removed.  All animations now
 use the GPU optimised utilities found in ``wave_sim.high_quality`` which are
@@ -54,10 +60,11 @@ ux, uz = sv.displacement_components()  # in-plane components
 
 Animations can be generated via ``examples/high_quality_collage.py`` which
 uses the :mod:`wave_sim.high_quality` package to produce GPU accelerated movies
-for each wave class.  The script writes an MP4 per wave type and then assembles
-all clips into a single collage video.  Resolution, frame rate and layout can
-be adjusted through arguments and GPU rendering is used by default for smooth
-high fidelity output.
+for several wave classes.  The script writes an MP4 per wave type and then
+assembles all clips into a collage video.  Because the underlying animator is a
+generic scalar wave solver, only the basic body-wave examples are physically
+meaningful; the more complex surface/interface waves are shown merely for
+illustration.
 
 
 Additional standalone scripts in the ``examples`` directory demonstrate simple

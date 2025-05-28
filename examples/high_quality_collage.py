@@ -6,12 +6,6 @@ from wave_sim.wave_catalog import (
     SecondaryWave,
     SHWave,
     SVWave,
-    RayleighWave,
-    LoveWave,
-    LambS0Mode,
-    LambA0Mode,
-    StoneleyWave,
-    ScholteWave,
 )
 
 import argparse
@@ -25,12 +19,6 @@ WAVE_CLASSES = [
     SecondaryWave,
     SHWave,
     SVWave,
-    RayleighWave,
-    LoveWave,
-    LambS0Mode,
-    LambA0Mode,
-    StoneleyWave,
-    ScholteWave,
 ]
 
 

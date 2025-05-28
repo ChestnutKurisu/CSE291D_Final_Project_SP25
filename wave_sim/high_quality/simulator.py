@@ -23,10 +23,26 @@ class SceneObject:
 
 
 class WaveSimulator2D:
-    """GPU accelerated 2-D wave equation solver."""
+    """GPU accelerated 2-D wave equation solver.
+
+    Parameters
+    ----------
+    width, height : int
+        Domain size in pixels.
+    scene_objects : list, optional
+        Objects placed in the scene.
+    initial_field : array-like, optional
+        Initial displacement field.
+    backend : {"gpu", "cpu"}, optional
+        Array backend. ``gpu`` uses :mod:`cupy` when available.
+    boundary : {"reflective", "periodic", "absorbing"}, optional
+        Boundary condition.
+    dx : float, optional
+        Spatial resolution of the grid.  ``laplacian`` is scaled by ``1/dx^2``.
+    """
 
     def __init__(self, width, height, scene_objects=None, initial_field=None,
-                 backend="gpu", boundary="reflective"):
+                 backend="gpu", boundary="reflective", dx=1.0):
         if backend == "gpu" and cp is not None:
             self.xp = cp
         else:
@@ -50,6 +66,7 @@ class WaveSimulator2D:
 
         self.t = 0.0
         self.dt = 1.0
+        self.dx = dx
         self.scene_objects = scene_objects if scene_objects is not None else []
 
     def reset_time(self):
@@ -74,7 +91,7 @@ class WaveSimulator2D:
                 self.u, self.laplacian_kernel, mode="same", boundary=bmode
             )
         v = (self.u - self.u_prev) * self.d * self.global_dampening
-        r = self.u + v + laplacian * (self.c * self.dt) ** 2
+        r = self.u + v + laplacian * (self.c * self.dt / self.dx) ** 2
         if self.boundary == "absorbing":
             damp = 8
             for i in range(damp):
