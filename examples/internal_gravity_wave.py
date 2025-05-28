@@ -1,45 +1,26 @@
-import numpy as np
+"""1-D internal gravity wave using the consolidated solver."""
+
 import matplotlib.pyplot as plt
+import numpy as np
 
-# Internal Gravity Wave Solver
-# ----------------------------
-# Solves psi_tt = N^2 psi_xx on a 1-D grid using a simple
-# finite difference scheme with Dirichlet boundaries.
+from wave_sim import InternalGravityWave
 
-Lx = 2.0
-Nx = 400
-Nfreq = 1.0
 
-c = Nfreq
+def psi0(x):
+    return np.exp(-100 * (x - 1.0) ** 2)
 
-dx = Lx / (Nx - 1)
-Tmax = 3.0
-dt = 0.8 * dx / c
-nt = int(Tmax / dt)
 
-x = np.linspace(0, Lx, Nx)
+if __name__ == "__main__":
+    sim = InternalGravityWave(L=2.0, Nx=800, T=3.0)
+    sim.initial_conditions(psi0)
+    sol = sim.solve()
+    x = sim.x
+    plt.figure(figsize=(8, 4))
+    plt.plot(x, sol[-1], label="psi at final time")
+    plt.xlabel("x")
+    plt.ylabel("psi")
+    plt.title("Internal Gravity Wave - Final State")
+    plt.grid(True)
+    plt.legend()
+    plt.show()
 
-psi_old = np.zeros(Nx)
-psi = np.exp(-100 * (x - Lx / 2) ** 2)
-psi_old[:] = psi
-psi_new = np.zeros_like(psi)
-
-for _ in range(nt):
-    for i in range(1, Nx - 1):
-        psi_new[i] = (
-            2 * psi[i]
-            - psi_old[i]
-            + (c * dt / dx) ** 2 * (psi[i + 1] - 2 * psi[i] + psi[i - 1])
-        )
-    psi_new[0] = 0.0
-    psi_new[-1] = 0.0
-    psi_old, psi = psi, psi_new
-
-plt.figure(figsize=(8, 4))
-plt.plot(x, psi, label="psi at final time")
-plt.xlabel("x")
-plt.ylabel("psi")
-plt.title("Internal Gravity Wave - Final State")
-plt.grid(True)
-plt.legend()
-plt.show()

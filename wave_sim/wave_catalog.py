@@ -6,6 +6,7 @@ phenomena.  Each class simply sets a default wave speed ``c`` and initialises
 the field with a unit impulse in the centre of the grid.
 """
 
+import numpy as np
 from .base import WaveSimulation
 from .solvers import (
     PWaveSimulation,
@@ -17,6 +18,11 @@ from .solvers import (
     DeepWaterGravityWave,
     ShallowWaterGravityWave,
     CapillaryWave,
+    InternalGravityWave as InternalGravityWaveSolver,
+    KelvinWave as KelvinWaveSolver,
+    RossbyPlanetaryWave as RossbyPlanetaryWaveSolver,
+    FlexuralBeamWave as FlexuralBeamWaveSolver,
+    AlfvenWave as AlfvenWaveSolver,
 )
 
 
@@ -122,53 +128,48 @@ class ScholteWave(WaveSimulation):
 # FLUID SURFACE AND INTERNAL WAVES
 ###############################################################################
 
-class InternalGravityWave(WaveSimulation):
+class InternalGravityWave(InternalGravityWaveSolver):
     """Internal gravity wave."""
 
     def __init__(self, **kwargs):
-        kwargs.setdefault("c", 0.2)
         super().__init__(**kwargs)
-        self.initialize(amplitude=1.0)
+        self.initial_conditions(lambda x: np.exp(-100 * (x - self.L / 2) ** 2))
 
 
-class KelvinWave(WaveSimulation):
+class KelvinWave(KelvinWaveSolver):
     """Kelvin wave."""
 
     def __init__(self, **kwargs):
-        kwargs.setdefault("c", 0.2)
         super().__init__(**kwargs)
-        self.initialize(amplitude=1.0)
+        self.initial_conditions(lambda y: np.exp(-((y - self.L / 4) / 0.5) ** 2))
 
 
-class RossbyPlanetaryWave(WaveSimulation):
+class RossbyPlanetaryWave(RossbyPlanetaryWaveSolver):
     """Rossby planetary wave."""
 
     def __init__(self, **kwargs):
-        kwargs.setdefault("c", 0.05)
         super().__init__(**kwargs)
-        self.initialize(amplitude=1.0)
+        self.initial_conditions(lambda X, Y: np.exp(-((X - self.Lx / 2) ** 2 + (Y - self.Ly / 2) ** 2) / 0.2))
 
 
 ###############################################################################
 # STRUCTURAL AND PLASMA WAVES
 ###############################################################################
 
-class FlexuralBeamWave(WaveSimulation):
+class FlexuralBeamWave(FlexuralBeamWaveSolver):
     """Flexural beam wave."""
 
     def __init__(self, **kwargs):
-        kwargs.setdefault("c", 0.4)
         super().__init__(**kwargs)
-        self.initialize(amplitude=1.0)
+        self.initial_conditions(lambda x: np.exp(-100 * (x - self.L / 2) ** 2))
 
 
-class AlfvenWave(WaveSimulation):
+class AlfvenWave(AlfvenWaveSolver):
     """Alfv\u00e9n wave."""
 
     def __init__(self, **kwargs):
-        kwargs.setdefault("c", 1.0)
         super().__init__(**kwargs)
-        self.initialize(amplitude=1.0)
+        self.initial_conditions(lambda x: np.sin(2 * np.pi * x / self.L))
 
 
 __all__ = [
