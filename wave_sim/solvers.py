@@ -127,15 +127,51 @@ class SWaveSimulation(WaveSimulation):
 
 
 class SHWaveSimulation(SWaveSimulation):
-    """Horizontally polarised shear wave."""
+    """Horizontally polarised shear wave.
 
-    pass
+    The scalar field ``u_curr`` directly corresponds to the out-of-plane
+    displacement :math:`u_y`.  This subclass simply exposes a helper method to
+    access that quantity for consistency with :class:`SVWaveSimulation`.
+    """
+
+    def displacement(self) -> np.ndarray:
+        """Return the out-of-plane displacement ``u_y``."""
+
+        return self.u_curr
 
 
 class SVWaveSimulation(SWaveSimulation):
-    """Vertically polarised shear wave."""
+    """Vertically polarised shear wave represented by a scalar potential.
 
-    pass
+    Physical displacement components ``(u_x, u_z)`` can be recovered from the
+    scalar potential :math:`\Psi` via
+
+    .. math::
+
+       u_x = \frac{\partial \Psi}{\partial z},\qquad
+       u_z = -\frac{\partial \Psi}{\partial x}.
+    """
+
+    def displacement_components(self) -> tuple[np.ndarray, np.ndarray]:
+        """Return the displacement components ``(u_x, u_z)``.
+
+        The derivatives are computed with second-order centred differences via
+        :func:`numpy.gradient`.  For reflective boundaries the displacement is
+        forced to zero at the edges to remain consistent with the field
+        boundary condition.
+        """
+
+        dpsi_dx, dpsi_dz = np.gradient(self.u_curr, self.dx, self.dx, edge_order=2)
+        ux = dpsi_dz
+        uz = -dpsi_dx
+
+        if self.boundary == "reflective":
+            ux[0, :] = ux[-1, :] = 0.0
+            ux[:, 0] = ux[:, -1] = 0.0
+            uz[0, :] = uz[-1, :] = 0.0
+            uz[:, 0] = uz[:, -1] = 0.0
+
+        return ux, uz
 
 
 class PlaneAcousticWave:

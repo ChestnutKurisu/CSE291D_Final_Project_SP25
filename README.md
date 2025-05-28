@@ -34,6 +34,18 @@ sim.initialize(source_func=gaussian)
 The solver emits a warning if the CFL condition ``c * dt / dx`` exceeds
 ``1 / sqrt(2)`` to help maintain stability.
 
+For the specialised shear-wave solvers ``SHWaveSimulation`` and
+``SVWaveSimulation`` the physical displacement can be retrieved directly from
+the simulation state:
+
+```python
+sh = SHWaveSimulation()
+uy = sh.displacement()               # out-of-plane displacement
+
+sv = SVWaveSimulation()
+ux, uz = sv.displacement_components()  # in-plane components
+```
+
 Animations can be generated via ``examples/all_waves_collage.py`` which iterates
 over every class in the catalog and writes a short MP4 file for each one into an
 ``output`` directory.
