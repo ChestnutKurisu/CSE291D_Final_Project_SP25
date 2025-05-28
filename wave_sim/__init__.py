@@ -30,7 +30,7 @@ from .wave_catalog import (
     AlfvenWave,
 )
 
-from .dispersion import (
+from .solvers import (
     rayleigh_wave_speed,
     love_wave_dispersion,
     lamb_s0_mode,
