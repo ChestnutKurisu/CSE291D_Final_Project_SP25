@@ -22,7 +22,8 @@ class PointSource(SceneObject):
         self.phase = 0.0
 
     def render(self, field, wave_speed_field, dampening_field):
-        pass
+        """Point sources leave the medium properties untouched."""
+        pass  # field updates happen in :meth:`update_field`
 
     def update_field(self, field, t):
         if cp is not None and isinstance(field, cp.ndarray):

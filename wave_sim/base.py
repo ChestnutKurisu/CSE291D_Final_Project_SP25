@@ -37,6 +37,9 @@ class WaveSimulation:
         else:
             self.xp = np
 
+        if self.boundary == "absorbing":
+            self._absorb_mask = self._build_absorb_mask()
+
         self.u_prev = self.xp.zeros((self.n, self.n))
         self.u_curr = self.xp.zeros((self.n, self.n))
         self.time = 0.0
@@ -45,6 +48,18 @@ class WaveSimulation:
             warnings.warn(
                 "CFL condition violated: c * dt / dx = {:.2f} > 1/sqrt(2)".format(cfl)
             )
+
+    def _build_absorb_mask(self, n_taper: int = 20, strength: float = 4.0):
+        xp = self.xp
+        x = np.linspace(0, 1, n_taper) ** 2
+        taper = np.exp(-strength * x[::-1])
+        mask = np.ones((self.n, self.n))
+        for i in range(n_taper):
+            mask[i, :] *= taper[i]
+            mask[-1 - i, :] *= taper[i]
+            mask[:, i] *= taper[i]
+            mask[:, -1 - i] *= taper[i]
+        return xp.asarray(mask)
 
     def step(self):
         xp = self.xp
@@ -66,14 +81,7 @@ class WaveSimulation:
         elif self.boundary == "periodic":
             pass  # np.roll already provides periodic boundaries
         elif self.boundary == "absorbing":
-            # Simple damped border acting as a sponge layer
-            damp = 8
-            for i in range(damp):
-                factor = (damp - i) / damp
-                u_next[i, :] *= factor
-                u_next[-1 - i, :] *= factor
-                u_next[:, i] *= factor
-                u_next[:, -1 - i] *= factor
+            u_next *= self._absorb_mask
         else:
             raise ValueError(f"Unknown boundary condition {self.boundary}")
         self.u_prev, self.u_curr = self.u_curr, u_next
@@ -96,13 +104,10 @@ class WaveSimulation:
         """
         xp = self.xp
         if source_func is not None:
-            x = xp.arange(self.n) * self.dx
-            y = xp.arange(self.n) * self.dx
+            x = xp.arange(self.n, dtype=xp.float32) * self.dx
+            y = xp.arange(self.n, dtype=xp.float32) * self.dx
             X, Y = xp.meshgrid(x, y, indexing="ij")
-            self.u_curr = xp.asarray(source_func(cp.asnumpy(X) if xp is cp else X,
-                                                 cp.asnumpy(Y) if xp is cp else Y))
-            if xp is cp:
-                self.u_curr = cp.asarray(self.u_curr)
+            self.u_curr = xp.asarray(source_func(X, Y))
         else:
             if source_pos is None:
                 source_pos = (self.n // 2, self.n // 2)
