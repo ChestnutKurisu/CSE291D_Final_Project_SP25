@@ -16,21 +16,11 @@ from wave_sim.wave_catalog import (
 
 import argparse
 
+import importlib
+
 from wave_sim.high_quality import simulate_wave, PointSource, ConstantSpeed
 from wave_sim.collage import collage_videos
 from wave_sim.core.boundary import BoundaryCondition
-
-# Import generators for 1D/spectral animations
-from examples.alfven_wave import generate_animation as generate_alfven_animation
-from examples.flexural_beam_wave import generate_animation as generate_flexural_animation
-from examples.internal_gravity_wave import generate_animation as generate_internal_gravity_animation
-from examples.kelvin_wave import generate_animation as generate_kelvin_animation
-from examples.rossby_planetary_wave import generate_animation as generate_rossby_animation
-from examples.plane_acoustic_wave import generate_animation as generate_plane_acoustic_animation
-from examples.spherical_acoustic_wave import generate_animation as generate_spherical_acoustic_animation
-from examples.deep_water_gravity_wave import generate_animation as generate_deep_water_animation
-from examples.shallow_water_gravity_wave import generate_animation as generate_shallow_water_animation
-from examples.capillary_wave import generate_animation as generate_capillary_animation
 
 
 WAVE_CLASSES_2D = [
@@ -46,18 +36,26 @@ WAVE_CLASSES_2D = [
     ScholteWave,
 ]
 
-ONE_D_SPECTRAL_ANIMATIONS_CONFIG = [
-    (generate_alfven_animation, "alfven_wave"),
-    (generate_flexural_animation, "flexural_beam_wave"),
-    (generate_internal_gravity_animation, "internal_gravity_wave"),
-    (generate_kelvin_animation, "kelvin_wave"),
-    (generate_rossby_animation, "rossby_planetary_wave"),
-    (generate_plane_acoustic_animation, "plane_acoustic_wave"),
-    (generate_spherical_acoustic_animation, "spherical_acoustic_wave"),
-    (generate_deep_water_animation, "deep_water_gravity_wave"),
-    (generate_shallow_water_animation, "shallow_water_gravity_wave"),
-    (generate_capillary_animation, "capillary_wave"),
+ONE_D_MODULES = [
+    "alfven_wave",
+    "flexural_beam_wave",
+    "internal_gravity_wave",
+    "kelvin_wave",
+    "rossby_planetary_wave",
+    "plane_acoustic_wave",
+    "spherical_acoustic_wave",
+    "deep_water_gravity_wave",
+    "shallow_water_gravity_wave",
+    "capillary_wave",
 ]
+
+
+def load_one_d_generators():
+    configs = []
+    for mod_name in ONE_D_MODULES:
+        mod = importlib.import_module(f"examples.{mod_name}")
+        configs.append((mod.generate_animation, mod_name))
+    return configs
 
 
 def get_wave_speed(cls):
@@ -93,12 +91,22 @@ def run_all(args):
         files.append(outfile)
 
     print("\nGenerating 1D/spectral wave animations...")
-    for generator_func, base_name in ONE_D_SPECTRAL_ANIMATIONS_CONFIG:
+    for generator_func, base_name in load_one_d_generators():
         out_name_1d = f"{base_name}.mp4"
         generated_path = generator_func(output_dir=args.outdir, out_name=out_name_1d)
         files.append(generated_path)
 
-    collage_videos(files, os.path.join(args.outdir, "collage_all.mp4"), fps=args.fps, mode=args.mode)
+    missing = [f for f in files if not os.path.exists(f)]
+    if missing:
+        print("Missing outputs:")
+        for m in missing:
+            print(" -", m)
+
+    try:
+        collage_videos(files, os.path.join(args.outdir, "collage_all.mp4"), fps=args.fps, mode=args.mode)
+    except Exception as exc:
+        print("Collage generation failed:", exc)
+        raise
 
 
 def parse_args():

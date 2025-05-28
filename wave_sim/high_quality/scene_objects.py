@@ -5,7 +5,10 @@ try:
 except Exception:  # pragma: no cover
     cp = None
 
-import cv2
+try:
+    import cv2
+except Exception:  # pragma: no cover - optional dependency
+    cv2 = None  # type: ignore
 import scipy.signal
 import math
 
@@ -15,24 +18,31 @@ XP = cp if cp is not None else np
 
 
 class PointSource(SceneObject):
-    def __init__(self, x, y, freq=0.1, amplitude=1.0):
+    """Sinusoidal point emitter added to the field."""
+
+    def __init__(self, x, y, freq=0.1, amplitude=1.0, phase=0.0, amp_modulator=None):
         self.x = int(x)
         self.y = int(y)
         self.freq = freq
         self.amplitude = amplitude
-        self.phase = 0.0
+        self.phase = phase
+        self.amp_modulator = amp_modulator
 
     def render(self, field, wave_speed_field, dampening_field):
         """Point sources leave the medium properties untouched."""
         pass  # field updates happen in :meth:`update_field`
 
     def update_field(self, field, t):
-        if cp is not None and isinstance(field, cp.ndarray):
-            field[self.y, self.x] += cp.sin(t * self.freq * 2 * cp.pi) * self.amplitude
-        else:
-            field[self.y, self.x] += np.sin(t * self.freq * 2 * np.pi) * self.amplitude
+        xp = cp if cp is not None and isinstance(field, cp.ndarray) else np
+        local_amp = self.amplitude
+        if self.amp_modulator is not None:
+            local_amp *= self.amp_modulator(t)
+        val = xp.sin(self.phase + t * self.freq * 2 * xp.pi) * local_amp
+        field[self.y, self.x] += val
 
     def render_visualization(self, image):
+        if cv2 is None:
+            return
         if 0 <= self.y < image.shape[0] and 0 <= self.x < image.shape[1]:
             cv2.circle(image, (self.x, self.y), 3, (50, 50, 50), -1)
 
@@ -243,6 +253,8 @@ class StaticRefractiveIndexPolygon(SceneObject):
         pass
 
     def render_visualization(self, image):
+        if cv2 is None:
+            return
         vertices = np.round(self.vertices).astype(np.int32)
         cv2.fillPoly(image, [vertices], (60, 60, 60), lineType=cv2.LINE_AA)
 
@@ -314,6 +326,8 @@ class LineSource(SceneObject):
         field[ys, xs] = v
 
     def render_visualization(self, image):
+        if cv2 is None:
+            return
         cv2.line(image, (self.x1, self.y1), (self.x2, self.y2), (50, 50, 50), 1)
 
 
