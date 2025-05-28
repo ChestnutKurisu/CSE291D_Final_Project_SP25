@@ -320,43 +320,49 @@ class ModulatorDiscreteSignal:
         s1 = self.samples[max(min(idx1, len(self.samples) - 1), 0)]
         return (1.0 - frac) * s0 + frac * s1
 
+def gaussian_kernel(size, sigma):
+    ax = np.linspace(-(size-1)/2., (size-1)/2., size)
+    gauss = np.exp(-0.5 * ax**2 / sigma**2)
+    kernel = np.outer(gauss, gauss)
+    return kernel / kernel.sum()
 
-class GaussianBlobSource(SceneObject):
-    """Emit a Gaussian-shaped disturbance centered at ``(x, y)``."""
 
-    def __init__(self, x, y, sigma_px, freq, amplitude=1.0, phase=0.0, amp_modulator=None):
-        self.x = int(x)
-        self.y = int(y)
-        self.sigma_px = float(sigma_px)
+class MovingCharge(SceneObject):
+    """Demo object that writes a small travelling Gaussian blob."""
+
+    def __init__(self, x, y, freq, amplitude):
+        self.x = x
+        self.y = y
         self.freq = freq
         self.amplitude = amplitude
-        self.phase = phase
-        self.amp_modulator = amp_modulator
-        self._cache = None
-
-    def _gaussian_mask(self, shape, xp):
-        if self._cache and self._cache[0] == shape and self._cache[1] is xp:
-            return self._cache[2]
-        h, w = shape
-        ys, xs = xp.mgrid[:h, :w]
-        mask = xp.exp(-((xs - self.x) ** 2 + (ys - self.y) ** 2) / (2.0 * self.sigma_px ** 2))
-        self._cache = (shape, xp, mask)
-        return mask
+        self.size = 11
+        host_kernel = gaussian_kernel(self.size, sigma=self.size/3.0)
+        xp = cp if cp and XP is cp else np
+        self.kernel = xp.array(host_kernel, dtype=xp.float32)
 
     def render(self, field, wave_speed_field, dampening_field):
         pass
 
     def update_field(self, field, t):
-        xp = cp if cp is not None and isinstance(field, cp.ndarray) else np
-        local_amp = self.amplitude
-        if self.amp_modulator is not None:
-            local_amp *= self.amp_modulator(t)
-        value = xp.sin(self.phase + self.freq * t) * local_amp
-        mask = self._gaussian_mask(field.shape, xp)
-        field += mask * value
+        xp = cp if cp and isinstance(field, cp.ndarray) else np
+        fade_in = math.sin(min(t*0.1, math.pi/2))
 
-    def render_visualization(self, image):
-        cv2.circle(image, (self.x, self.y), int(self.sigma_px), (50, 50, 50), 1)
+        x_now = int(self.x + math.sin(self.freq * t*0.05)*200)
+        y_now = int(self.y + math.sin(self.freq * t)*self.amplitude)
 
+        half = self.size // 2
+        y0 = max(y_now-half, 0)
+        y1 = min(y_now+half+1, field.shape[0])
+        x0 = max(x_now-half, 0)
+        x1 = min(x_now+half+1, field.shape[1])
 
+        ky0 = half - (y_now - y0)
+        kx0 = half - (x_now - x0)
+        ky1 = ky0 + (y1 - y0)
+        kx1 = kx0 + (x1 - x0)
 
+        if (y1>y0) and (x1>x0):
+            patch = field[y0:y1, x0:x1]
+            k = self.kernel[ky0:ky1, kx0:kx1]
+            patch += fade_in * 0.25 * k
+            field[y0:y1, x0:x1] = patch

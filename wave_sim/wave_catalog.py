@@ -96,7 +96,7 @@ class SVWave(Wave2DConfig):
 
 
 class RayleighWave(Wave2DConfig):
-    """Rayleigh surface wave – scalar surrogate with realistic c_R."""
+    """NOTE: placeholder using the scalar wave equation with ``c`` ≈ 1300 m/s."""
 
     def __init__(self, **kw):
         c_R = rayleigh_wave_speed(_ALPHA, _BETA)
@@ -104,7 +104,7 @@ class RayleighWave(Wave2DConfig):
 
 
 class LoveWave(Wave2DConfig):
-    """Love surface wave – fundamental mode phase speed (~10 Hz)."""
+    """NOTE: placeholder; scalar wave with speed from the Love-mode estimate."""
 
     def __init__(self, h: float = 100.0, **kw):
         c_L = love_wave_dispersion(freq=2*np.pi*10,
@@ -114,7 +114,7 @@ class LoveWave(Wave2DConfig):
 
 
 class LambS0Mode(Wave2DConfig):
-    """Symmetric Lamb plate mode – scalar surrogate."""
+    """NOTE: placeholder; scalar wave with speed from Lamb S0 estimate."""
 
     def __init__(self, plate_h: float = 5.0, **kw):
         c = lamb_s0_mode(freq=2*np.pi*5, alpha=_ALPHA, beta=_BETA,
@@ -123,7 +123,7 @@ class LambS0Mode(Wave2DConfig):
 
 
 class LambA0Mode(Wave2DConfig):
-    """Antisymmetric Lamb plate mode."""
+    """NOTE: placeholder; scalar wave with speed from Lamb A0 estimate."""
 
     def __init__(self, plate_h: float = 5.0, **kw):
         c = lamb_a0_mode(freq=2*np.pi*5, alpha=_ALPHA, beta=_BETA,
@@ -132,7 +132,7 @@ class LambA0Mode(Wave2DConfig):
 
 
 class StoneleyWave(Wave2DConfig):
-    """Stoneley solid–solid interface – scalar surrogate."""
+    """NOTE: placeholder; scalar wave with speed from Stoneley estimate."""
 
     def __init__(self, **kw):
         c = stoneley_wave_speed(_ALPHA, _BETA, _RHO,
@@ -141,7 +141,7 @@ class StoneleyWave(Wave2DConfig):
 
 
 class ScholteWave(Wave2DConfig):
-    """Scholte solid–fluid interface – scalar surrogate."""
+    """NOTE: placeholder; scalar wave with speed from Scholte estimate."""
 
     def __init__(self, **kw):
         c = scholte_wave_speed(_ALPHA, _BETA, _RHO,
