@@ -60,12 +60,27 @@ class SWaveSimulation(WaveSimulation):
 
 
 class SHWaveSimulation(SWaveSimulation):
-    """Horizontally polarised shear wave."""
+    """Horizontally polarised shear wave.
 
+    This subclass does not change the numerical scheme from
+    :class:`SWaveSimulation` but serves to emphasise that the simulated field
+    represents the out-of-plane displacement ``u_y``.  All solver parameters and
+    the ``step`` method are inherited unchanged.
+    """
+
+    # No additional functionality required; the base SWaveSimulation already
+    # implements the finite-difference update for a shear wave field.
     pass
 
 
 class SVWaveSimulation(SWaveSimulation):
-    """Vertically polarised shear wave."""
+    """Vertically polarised shear wave.
+
+    As with :class:`SHWaveSimulation`, this class simply inherits the scalar
+    shear-wave solver from :class:`SWaveSimulation`.  The field can be
+    interpreted as a potential whose spatial derivatives give the in-plane
+    displacement components ``(u_x, u_z)``.  The numerical scheme remains the
+    same; the class exists mainly for clarity when constructing simulations.
+    """
 
     pass
