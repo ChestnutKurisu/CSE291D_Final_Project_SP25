@@ -15,120 +15,84 @@ from typing import Optional
 from .base import WaveSimulation
 
 
-class PWaveSimulation(WaveSimulation):
+class ElasticWaveSimulation(WaveSimulation):
+    """Shared finite-difference implementation for elastic body waves."""
+
+    def __init__(
+        self,
+        f0: float = 15.0,
+        source_pos: tuple[int, int] | None = None,
+        source_func=None,
+        **kwargs,
+    ) -> None:
+        kwargs.setdefault("dx", 5.0)
+        kwargs.setdefault("dt", 0.0005)
+        kwargs.setdefault("backend", "gpu")
+        super().__init__(**kwargs)
+
+        self.f0 = f0
+        if source_pos is None:
+            source_pos = (self.n // 2, self.n // 2)
+        self.source_pos = source_pos
+        self.initialize(amplitude=0.0, source_func=source_func)
+
+    @staticmethod
+    def ricker_wavelet(t: float, f0: float, xp=np):
+        tau = 1.0 / f0
+        return (
+            1.0 - 2.0 * (xp.pi ** 2) * (f0 ** 2) * (t - tau) ** 2
+        ) * xp.exp(-(xp.pi ** 2) * (f0 ** 2) * (t - tau) ** 2)
+
+    def step(self):
+        xp = self.xp
+        c2 = (self.c * self.dt / self.dx) ** 2
+        laplacian = (
+            xp.roll(self.u_curr, 1, axis=0)
+            + xp.roll(self.u_curr, -1, axis=0)
+            + xp.roll(self.u_curr, 1, axis=1)
+            + xp.roll(self.u_curr, -1, axis=1)
+            - 4 * self.u_curr
+        )
+        u_next = 2 * self.u_curr - self.u_prev + c2 * laplacian
+
+        amp = self.ricker_wavelet(self.time, self.f0, xp)
+        sx, sy = self.source_pos
+        u_next[sx, sy] += amp
+
+        if self.boundary == "reflective":
+            u_next[0, :] = 0
+            u_next[-1, :] = 0
+            u_next[:, 0] = 0
+            u_next[:, -1] = 0
+        elif self.boundary == "periodic":
+            pass
+        elif self.boundary == "absorbing":
+            u_next[0, :] = u_next[1, :]
+            u_next[-1, :] = u_next[-2, :]
+            u_next[:, 0] = u_next[:, 1]
+            u_next[:, -1] = u_next[:, -2]
+        else:
+            raise ValueError(f"Unknown boundary condition {self.boundary}")
+
+        self.u_prev, self.u_curr = self.u_curr, u_next
+        self.time += self.dt
+        return u_next
+
+
+class PWaveSimulation(ElasticWaveSimulation):
     """Finite-difference propagator for a 2-D P-wave field."""
 
     def __init__(self, f0=15.0, source_pos=None, source_func=None, **kwargs):
         kwargs.setdefault("c", 3000.0)
-        kwargs.setdefault("dx", 5.0)
-        kwargs.setdefault("dt", 0.0005)
-        kwargs.setdefault("backend", "gpu")
-        super().__init__(**kwargs)
-        self.f0 = f0
-        if source_pos is None:
-            source_pos = (self.n // 2, self.n // 2)
-        self.source_pos = source_pos
-        self.initialize(amplitude=0.0, source_func=source_func)
-
-    @staticmethod
-    def ricker_wavelet(t, f0, xp=np):
-        tau = 1.0 / f0
-        return (1.0 - 2.0 * (xp.pi ** 2) * (f0 ** 2) * (t - tau) ** 2) * xp.exp(
-            -(xp.pi ** 2) * (f0 ** 2) * (t - tau) ** 2
-        )
-
-    def step(self):
-        xp = self.xp
-        c2 = (self.c * self.dt / self.dx) ** 2
-        laplacian = (
-            xp.roll(self.u_curr, 1, axis=0)
-            + xp.roll(self.u_curr, -1, axis=0)
-            + xp.roll(self.u_curr, 1, axis=1)
-            + xp.roll(self.u_curr, -1, axis=1)
-            - 4 * self.u_curr
-        )
-        u_next = 2 * self.u_curr - self.u_prev + c2 * laplacian
-
-        amp = self.ricker_wavelet(self.time, self.f0, xp)
-        sx, sy = self.source_pos
-        u_next[sx, sy] += amp
-
-        if self.boundary == "reflective":
-            u_next[0, :] = 0
-            u_next[-1, :] = 0
-            u_next[:, 0] = 0
-            u_next[:, -1] = 0
-        elif self.boundary == "periodic":
-            pass
-        elif self.boundary == "absorbing":
-            u_next[0, :] = u_next[1, :]
-            u_next[-1, :] = u_next[-2, :]
-            u_next[:, 0] = u_next[:, 1]
-            u_next[:, -1] = u_next[:, -2]
-        else:
-            raise ValueError(f"Unknown boundary condition {self.boundary}")
-
-        self.u_prev, self.u_curr = self.u_curr, u_next
-        self.time += self.dt
-        return u_next
+        super().__init__(f0=f0, source_pos=source_pos, source_func=source_func, **kwargs)
 
 
-class SWaveSimulation(WaveSimulation):
+class SWaveSimulation(ElasticWaveSimulation):
     """Finite-difference solver for shear (S) waves."""
 
     def __init__(self, f0=15.0, source_pos=None, source_func=None, **kwargs):
         kwargs.setdefault("c", 1500.0)
-        kwargs.setdefault("dx", 5.0)
-        kwargs.setdefault("dt", 0.0005)
-        kwargs.setdefault("backend", "gpu")
-        super().__init__(**kwargs)
-        self.f0 = f0
-        if source_pos is None:
-            source_pos = (self.n // 2, self.n // 2)
-        self.source_pos = source_pos
-        self.initialize(amplitude=0.0, source_func=source_func)
-
-    @staticmethod
-    def ricker_wavelet(t, f0, xp=np):
-        tau = 1.0 / f0
-        return (1.0 - 2.0 * (xp.pi ** 2) * (f0 ** 2) * (t - tau) ** 2) * xp.exp(
-            -(xp.pi ** 2) * (f0 ** 2) * (t - tau) ** 2
-        )
-
-    def step(self):
-        xp = self.xp
-        c2 = (self.c * self.dt / self.dx) ** 2
-        laplacian = (
-            xp.roll(self.u_curr, 1, axis=0)
-            + xp.roll(self.u_curr, -1, axis=0)
-            + xp.roll(self.u_curr, 1, axis=1)
-            + xp.roll(self.u_curr, -1, axis=1)
-            - 4 * self.u_curr
-        )
-        u_next = 2 * self.u_curr - self.u_prev + c2 * laplacian
-
-        amp = self.ricker_wavelet(self.time, self.f0, xp)
-        sx, sy = self.source_pos
-        u_next[sx, sy] += amp
-
-        if self.boundary == "reflective":
-            u_next[0, :] = 0
-            u_next[-1, :] = 0
-            u_next[:, 0] = 0
-            u_next[:, -1] = 0
-        elif self.boundary == "periodic":
-            pass
-        elif self.boundary == "absorbing":
-            u_next[0, :] = u_next[1, :]
-            u_next[-1, :] = u_next[-2, :]
-            u_next[:, 0] = u_next[:, 1]
-            u_next[:, -1] = u_next[:, -2]
-        else:
-            raise ValueError(f"Unknown boundary condition {self.boundary}")
-
-        self.u_prev, self.u_curr = self.u_curr, u_next
-        self.time += self.dt
-        return u_next
+        super().__init__(f0=f0, source_pos=source_pos, source_func=source_func, **kwargs)
 
 
 class SHWaveSimulation(SWaveSimulation):
