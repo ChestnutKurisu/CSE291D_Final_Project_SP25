@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 # simple explicit finite difference scheme.
 
 Lx = 2.0
-Nx = 201
+Nx = 401
 
 D = 0.01
 

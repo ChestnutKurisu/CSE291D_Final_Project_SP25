@@ -1,14 +1,141 @@
 # -*- coding: utf-8 -*-
-"""Standalone 1-D wave solvers used in the examples.
+"""Unified collection of wave solver classes.
 
-These classes implement simple finite-difference or spectral
-schemes for various wave phenomena.  They are primarily intended
-for demonstration and are not optimised for large problems.
+This module consolidates the various solver implementations scattered across
+``wave_sim`` into a single location.  The class definitions are unchanged from
+those originally defined in :mod:`p_wave`, :mod:`s_wave` and
+:mod:`basic_wave_solvers`.
 """
 
 from __future__ import annotations
 
 import numpy as np
+
+from .base import WaveSimulation
+
+
+class PWaveSimulation(WaveSimulation):
+    """Finite-difference propagator for a 2-D P-wave field."""
+
+    def __init__(self, f0=15.0, source_pos=None, source_func=None, **kwargs):
+        kwargs.setdefault("c", 3000.0)
+        kwargs.setdefault("dx", 5.0)
+        kwargs.setdefault("dt", 0.0005)
+        super().__init__(**kwargs)
+        self.f0 = f0
+        if source_pos is None:
+            source_pos = (self.n // 2, self.n // 2)
+        self.source_pos = source_pos
+        self.initialize(amplitude=0.0, source_func=source_func)
+
+    @staticmethod
+    def ricker_wavelet(t, f0):
+        tau = 1.0 / f0
+        return (1.0 - 2.0 * (np.pi ** 2) * (f0 ** 2) * (t - tau) ** 2) * np.exp(
+            -(np.pi ** 2) * (f0 ** 2) * (t - tau) ** 2
+        )
+
+    def step(self):
+        c2 = (self.c * self.dt / self.dx) ** 2
+        laplacian = (
+            np.roll(self.u_curr, 1, axis=0)
+            + np.roll(self.u_curr, -1, axis=0)
+            + np.roll(self.u_curr, 1, axis=1)
+            + np.roll(self.u_curr, -1, axis=1)
+            - 4 * self.u_curr
+        )
+        u_next = 2 * self.u_curr - self.u_prev + c2 * laplacian
+
+        amp = self.ricker_wavelet(self.time, self.f0)
+        sx, sy = self.source_pos
+        u_next[sx, sy] += amp
+
+        if self.boundary == "reflective":
+            u_next[0, :] = 0
+            u_next[-1, :] = 0
+            u_next[:, 0] = 0
+            u_next[:, -1] = 0
+        elif self.boundary == "periodic":
+            pass
+        elif self.boundary == "absorbing":
+            u_next[0, :] = u_next[1, :]
+            u_next[-1, :] = u_next[-2, :]
+            u_next[:, 0] = u_next[:, 1]
+            u_next[:, -1] = u_next[:, -2]
+        else:
+            raise ValueError(f"Unknown boundary condition {self.boundary}")
+
+        self.u_prev, self.u_curr = self.u_curr, u_next
+        self.time += self.dt
+        return u_next
+
+
+class SWaveSimulation(WaveSimulation):
+    """Finite-difference solver for shear (S) waves."""
+
+    def __init__(self, f0=15.0, source_pos=None, source_func=None, **kwargs):
+        kwargs.setdefault("c", 1500.0)
+        kwargs.setdefault("dx", 5.0)
+        kwargs.setdefault("dt", 0.0005)
+        super().__init__(**kwargs)
+        self.f0 = f0
+        if source_pos is None:
+            source_pos = (self.n // 2, self.n // 2)
+        self.source_pos = source_pos
+        self.initialize(amplitude=0.0, source_func=source_func)
+
+    @staticmethod
+    def ricker_wavelet(t, f0):
+        tau = 1.0 / f0
+        return (1.0 - 2.0 * (np.pi ** 2) * (f0 ** 2) * (t - tau) ** 2) * np.exp(
+            -(np.pi ** 2) * (f0 ** 2) * (t - tau) ** 2
+        )
+
+    def step(self):
+        c2 = (self.c * self.dt / self.dx) ** 2
+        laplacian = (
+            np.roll(self.u_curr, 1, axis=0)
+            + np.roll(self.u_curr, -1, axis=0)
+            + np.roll(self.u_curr, 1, axis=1)
+            + np.roll(self.u_curr, -1, axis=1)
+            - 4 * self.u_curr
+        )
+        u_next = 2 * self.u_curr - self.u_prev + c2 * laplacian
+
+        amp = self.ricker_wavelet(self.time, self.f0)
+        sx, sy = self.source_pos
+        u_next[sx, sy] += amp
+
+        if self.boundary == "reflective":
+            u_next[0, :] = 0
+            u_next[-1, :] = 0
+            u_next[:, 0] = 0
+            u_next[:, -1] = 0
+        elif self.boundary == "periodic":
+            pass
+        elif self.boundary == "absorbing":
+            u_next[0, :] = u_next[1, :]
+            u_next[-1, :] = u_next[-2, :]
+            u_next[:, 0] = u_next[:, 1]
+            u_next[:, -1] = u_next[:, -2]
+        else:
+            raise ValueError(f"Unknown boundary condition {self.boundary}")
+
+        self.u_prev, self.u_curr = self.u_curr, u_next
+        self.time += self.dt
+        return u_next
+
+
+class SHWaveSimulation(SWaveSimulation):
+    """Horizontally polarised shear wave."""
+
+    pass
+
+
+class SVWaveSimulation(SWaveSimulation):
+    """Vertically polarised shear wave."""
+
+    pass
 
 
 class PlaneAcousticWave:
@@ -279,3 +406,15 @@ class CapillaryWave:
             snapshots.append(self.eta_now.copy())
         return np.array(snapshots)
 
+
+__all__ = [
+    "PWaveSimulation",
+    "SWaveSimulation",
+    "SHWaveSimulation",
+    "SVWaveSimulation",
+    "PlaneAcousticWave",
+    "SphericalAcousticWave",
+    "DeepWaterGravityWave",
+    "ShallowWaterGravityWave",
+    "CapillaryWave",
+]

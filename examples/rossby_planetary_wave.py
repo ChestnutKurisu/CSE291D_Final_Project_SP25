@@ -6,8 +6,8 @@ import matplotlib.pyplot as plt
 # Integrates zeta_t + beta * psi_x = 0 with zeta = nabla^2 psi on a 2-D
 # periodic domain using FFTs.
 
-Nx = 64
-Ny = 64
+Nx = 128
+Ny = 128
 Lx = 2.0 * np.pi
 Ly = 2.0 * np.pi
 

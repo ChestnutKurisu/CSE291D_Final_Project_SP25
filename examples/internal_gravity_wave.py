@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 # finite difference scheme with Dirichlet boundaries.
 
 Lx = 2.0
-Nx = 200
+Nx = 400
 Nfreq = 1.0
 
 c = Nfreq
