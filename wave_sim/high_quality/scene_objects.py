@@ -341,6 +341,46 @@ class ModulatorDiscreteSignal:
         s1 = self.samples[max(min(idx1, len(self.samples) - 1), 0)]
         return (1.0 - frac) * s0 + frac * s1
 
+
+class GaussianBlobSource(SceneObject):
+    """Emit a Gaussian-shaped disturbance centred at ``(x, y)``."""
+
+    def __init__(self, x, y, sigma_px, freq, amplitude=1.0, phase=0.0, amp_modulator=None):
+        self.x = int(x)
+        self.y = int(y)
+        self.sigma_px = float(sigma_px)
+        self.freq = freq
+        self.amplitude = amplitude
+        self.phase = phase
+        self.amp_modulator = amp_modulator
+        self._cache = None
+
+    def _gaussian_mask(self, shape, xp):
+        if self._cache and self._cache[0] == shape and self._cache[1] is xp:
+            return self._cache[2]
+        h, w = shape
+        ys, xs = xp.mgrid[:h, :w]
+        mask = xp.exp(-((xs - self.x) ** 2 + (ys - self.y) ** 2) / (2.0 * self.sigma_px ** 2))
+        self._cache = (shape, xp, mask)
+        return mask
+
+    def render(self, field, wave_speed_field, dampening_field):
+        pass
+
+    def update_field(self, field, t):
+        xp = cp if cp is not None and isinstance(field, cp.ndarray) else np
+        local_amp = self.amplitude
+        if self.amp_modulator is not None:
+            local_amp *= self.amp_modulator(t)
+        value = xp.sin(self.phase + self.freq * t) * local_amp
+        mask = self._gaussian_mask(field.shape, xp)
+        field += mask * value
+
+    def render_visualization(self, image):
+        if cv2 is None:
+            return
+        cv2.circle(image, (self.x, self.y), int(self.sigma_px), (50, 50, 50), 1)
+
 def gaussian_kernel(size, sigma):
     ax = np.linspace(-(size-1)/2., (size-1)/2., size)
     gauss = np.exp(-0.5 * ax**2 / sigma**2)

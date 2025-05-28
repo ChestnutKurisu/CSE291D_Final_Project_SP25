@@ -16,7 +16,11 @@ from wave_sim.high_quality.scene_objects import (
     LineSource,
     ModulatorSmoothSquare,
     ModulatorDiscreteSignal,
+    GaussianBlobSource,
 )
+from wave_sim.high_quality import WaveSimulator2D, ConstantSpeed
+from wave_sim.core.boundary import BoundaryCondition
+from wave_sim.initial_conditions import gaussian_2d
 
 
 def test_point_source_phase_and_modulator():
@@ -43,4 +47,30 @@ def test_modulator_discrete_signal_interp():
     m = ModulatorDiscreteSignal([0, 1, 2], [0, 1, 0])
     assert m(0.5) == pytest.approx(0.5)
     assert m(1.5) == pytest.approx(0.5)
+
+
+def test_gaussian_blob_source_basic():
+    f = np.zeros((16, 16))
+    src = GaussianBlobSource(8, 8, sigma_px=2, freq=0.0, amplitude=1.0)
+    src.update_field(f, 0.0)
+    assert f[8, 8] > 0.0
+    assert np.sum(f) > 0.0
+
+
+def test_absorbing_sponge_reduces_energy():
+    w, h = 32, 32
+    X, Y = np.meshgrid(np.arange(w), np.arange(h), indexing="ij")
+    init = gaussian_2d(X, Y, center=(2, h // 2), sigma=2.0)
+
+    sim_ref = WaveSimulator2D(w, h, [ConstantSpeed(1.0)], initial_field=init,
+                              backend="cpu", boundary=BoundaryCondition.REFLECTIVE)
+    sim_abs = WaveSimulator2D(w, h, [ConstantSpeed(1.0)], initial_field=init,
+                              backend="cpu", boundary=BoundaryCondition.ABSORBING,
+                              sponge_thickness=8)
+    for _ in range(10):
+        sim_ref.update_field()
+        sim_abs.update_field()
+    energy_ref = float(np.sum(np.abs(sim_ref.get_field())))
+    energy_abs = float(np.sum(np.abs(sim_abs.get_field())))
+    assert energy_abs < energy_ref
 

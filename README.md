@@ -33,12 +33,12 @@ sources. The boundary condition is specified with a
 
 * ``BoundaryCondition.REFLECTIVE`` – zero normal derivative at the edges
 * ``BoundaryCondition.PERIODIC`` – domain repeats at the edges
-* ``BoundaryCondition.ABSORBING`` – damped sponge layer near the borders, handled internally by the simulator
+* ``BoundaryCondition.ABSORBING`` – damped sponge layer near the borders, handled internally by the simulator using ``sponge_thickness``
 
 Note: If ``BoundaryCondition.ABSORBING`` is active, the simulator applies its own
-sponge layer. For more customized absorption profiles, set the boundary to
-``BoundaryCondition.REFLECTIVE`` and add a ``StaticDampening`` scene object with
-a desired ``border_thickness`` and profile.
+sponge layer whose width is ``sponge_thickness`` (set to ``0`` to disable). For more
+customized absorption profiles, set the boundary to ``BoundaryCondition.REFLECTIVE``
+and add a ``StaticDampening`` scene object with a desired ``border_thickness`` and profile.
 
 The initial disturbance is passed via ``initial_field`` when creating a
 `WaveSimulator2D` or through the ``scene_builder`` used by
@@ -55,10 +55,10 @@ simulate_wave(scene, "out.mp4", steps=200, resolution=(256, 256))
 ```
 
 The scene object collection also includes ``LineSource`` for emitting waves
-along an arbitrary segment and ``ModulatorSmoothSquare`` for smoothly pulsing
+along an arbitrary segment, ``GaussianBlobSource`` for a soft circular emitter
+using a Gaussian envelope, and ``ModulatorSmoothSquare`` for smoothly pulsing
 source amplitudes. ``LineSource`` accepts an optional ``amp_modulator`` to vary
-its strength over time. A ``GaussianBlobSource`` object creates a soft circular
-emitter using a Gaussian envelope.
+its strength over time.
 
 The solver emits a warning if the CFL condition ``c * dt / dx`` exceeds
 ``1 / sqrt(2)`` to help maintain stability. The spatial step ``dx`` and time step ``dt``
@@ -95,5 +95,5 @@ one‑dimensional and spectral solvers:
 * ``rossby_planetary_wave.py`` – linear Rossby wave via FFTs.
 * ``flexural_beam_wave.py`` – Euler–Bernoulli beam equation.
 * ``alfven_wave.py`` – 1‑D Alfv\u00e9n wave along a magnetic field.
-Each script now generates an MP4 animation that can also be incorporated into
-the collage.
+Each script now generates a consistent MP4 animation that can also be incorporated
+into the collage.
