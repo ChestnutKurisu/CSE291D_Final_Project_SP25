@@ -26,6 +26,7 @@ sources. The boundary condition is specified with a
 * ``BoundaryCondition.REFLECTIVE`` – zero normal derivative at the edges
 * ``BoundaryCondition.PERIODIC`` – domain repeats at the edges
 * ``BoundaryCondition.ABSORBING`` – damped sponge layer near the borders
+  (thickness configurable via ``sponge_thickness``)
 
 The initial disturbance is passed via ``initial_field`` when creating a
 `WaveSimulator2D` or through the ``scene_builder`` used by

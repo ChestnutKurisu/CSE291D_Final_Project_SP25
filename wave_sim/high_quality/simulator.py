@@ -37,10 +37,23 @@ class WaveSimulator2D:
         Boundary condition.
     dx : float, optional
         Spatial resolution of the grid.  ``laplacian`` is scaled by ``1/dx^2``.
+    sponge_thickness : int, optional
+        Thickness of the absorbing sponge layer when ``boundary`` is
+        ``ABSORBING``.  A value of 0 disables the sponge.
     """
 
-    def __init__(self, width, height, scene_objects=None, initial_field=None,
-                 backend="gpu", boundary=BoundaryCondition.REFLECTIVE, dx=1.0, dt=1.0):
+    def __init__(
+        self,
+        width,
+        height,
+        scene_objects=None,
+        initial_field=None,
+        backend="gpu",
+        boundary=BoundaryCondition.REFLECTIVE,
+        dx=1.0,
+        dt=1.0,
+        sponge_thickness: int = 8,
+    ):
         self.xp = get_array_module(backend)
         xp = self.xp
 
@@ -63,6 +76,7 @@ class WaveSimulator2D:
         self.t = 0.0
         self.dt = dt
         self.dx = dx
+        self.sponge_thickness = int(sponge_thickness)
         self.scene_objects = scene_objects if scene_objects is not None else []
 
         self._render_scene_properties()
@@ -102,10 +116,10 @@ class WaveSimulator2D:
             )
         v = (self.u - self.u_prev) * self.d * self.global_dampening
         r = self.u + v + laplacian * (self.c * self.dt / self.dx) ** 2
-        if self.boundary == BoundaryCondition.ABSORBING:
-            damp = 8
+        if self.boundary == BoundaryCondition.ABSORBING and self.sponge_thickness > 0:
+            damp = self.sponge_thickness
             for i in range(damp):
-                factor = ((damp - 1 - i) / (damp - 1)) ** 2 if damp > 1 else 0.0
+                factor = ((damp - 1.0 - i) / (damp - 1.0)) ** 2 if damp > 1 else 0.0
                 r[i, :] *= factor
                 r[-1 - i, :] *= factor
                 r[:, i] *= factor
