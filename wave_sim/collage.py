@@ -18,8 +18,9 @@ def collage_videos(paths, outfile, grid=None, fps=30, mode="grid", scale=1.0):
         grid is chosen.
     fps : int, optional
         Frame rate of the output video.
-    mode : {"grid", "horizontal", "vertical"}, optional
-        Layout mode. ``horizontal`` and ``vertical`` ignore ``grid``.
+    mode : {"grid", "horizontal", "vertical", "overlay"}, optional
+        Layout mode. ``horizontal`` and ``vertical`` ignore ``grid``. ``overlay``
+        averages all frames into a single image.
     scale : float, optional
         Scale factor applied to each frame before compositing.
     """
@@ -45,6 +46,8 @@ def collage_videos(paths, outfile, grid=None, fps=30, mode="grid", scale=1.0):
     if scale != 1.0:
         frame0 = zoom(frame0, (scale, scale, 1), order=1)
     h, w = frame0.shape[:2]
+    if mode == "overlay":
+        rows = cols = 1
 
     writer = imageio.get_writer(outfile, fps=fps)
     for i in range(nframes):
@@ -54,15 +57,22 @@ def collage_videos(paths, outfile, grid=None, fps=30, mode="grid", scale=1.0):
             if scale != 1.0:
                 frame = zoom(frame, (scale, scale, 1), order=1)
             tiles.append(frame)
-        # pad list if grid larger than number of videos
-        while len(tiles) < rows * cols:
-            tiles.append(np.zeros_like(frame0))
 
-        row_imgs = []
-        for r in range(rows):
-            row = np.concatenate(tiles[r*cols:(r+1)*cols], axis=1)
-            row_imgs.append(row)
-        collage = np.concatenate(row_imgs, axis=0)
+        if mode == "overlay":
+            accum = np.zeros_like(frame0, dtype=np.float32)
+            for frame in tiles:
+                accum += frame.astype(np.float32) / len(tiles)
+            collage = accum.astype(np.uint8)
+        else:
+            # pad list if grid larger than number of videos
+            while len(tiles) < rows * cols:
+                tiles.append(np.zeros_like(frame0))
+
+            row_imgs = []
+            for r in range(rows):
+                row = np.concatenate(tiles[r*cols:(r+1)*cols], axis=1)
+                row_imgs.append(row)
+            collage = np.concatenate(row_imgs, axis=0)
         writer.append_data(collage)
     writer.close()
     for r in readers:

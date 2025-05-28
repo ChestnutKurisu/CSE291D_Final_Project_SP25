@@ -46,16 +46,12 @@ sv = SVWaveSimulation()
 ux, uz = sv.displacement_components()  # in-plane components
 ```
 
-Animations can be generated via ``examples/all_waves_collage.py`` which
-iterates over every class in the catalog and writes a short MP4 file for each
-one into an ``output`` directory.  The script now also assembles these movies
-into a single collage video.  GPU acceleration via ``cupy`` is used by default
-for smoother, high-resolution output when available.
-
-An additional script ``examples/high_quality_collage.py`` leverages the
-``wave_sim.high_quality`` module to produce GPU-accelerated animations with a
-more advanced visual style.  It writes an MP4 for each wave type and also
-generates a collage video automatically.
+Animations can be generated via ``examples/high_quality_collage.py`` which
+uses the :mod:`wave_sim.high_quality` package to produce GPU accelerated movies
+for each wave class.  The script writes an MP4 per wave type and then assembles
+all clips into a single collage video.  Resolution, frame rate and layout can
+be adjusted through arguments and GPU rendering is used by default for smooth
+high fidelity output.
 
 
 Additional standalone scripts in the ``examples`` directory demonstrate simple

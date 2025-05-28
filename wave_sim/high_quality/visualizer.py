@@ -19,15 +19,23 @@ colormap_wave1 = np.array([
 ])
 
 
-def get_colormap_lut(name="wave1", invert=False):
+def get_colormap_lut(name="wave1", invert=False, black_level=0.0, make_symmetric=False):
+    """Return a uint8 lookup table for the given colormap."""
     if name == "wave1":
         colors = colormap_wave1 / 255.0
     else:
         import matplotlib.pyplot as plt
         cmap = plt.get_cmap(name)
         colors = cmap(np.linspace(0, 1, 256))[:, :3]
+
     if invert:
         colors = 1.0 - colors
+    if make_symmetric:
+        src = colors.copy()
+        colors[255:126:-1, :] = src[0:255:2, :]
+        colors[0:128, :] = src[0:255:2, :]
+
+    colors = np.clip(colors * (1.0 - black_level) + black_level, 0.0, 1.0)
     return (colors * 255).astype(np.uint8)
 
 
