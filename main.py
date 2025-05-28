@@ -31,10 +31,10 @@ f[1:-1, 1:-1, 1] = f[1:-1, 1:-1, 0] + 0.5 * c**2 * (
 fig = plt.figure(figsize=(6, 5))
 ax  = fig.add_subplot(projection='3d')
 surf = ax.plot_surface(xx, yy, f[:, :, 0],
-                       rstride=1, cstride=1, cmap=cm.coolwarm,
+                       rstride=1, cstride=1, cmap=cm.Spectral,
                        linewidth=0, antialiased=False)
 wire = ax.plot_wireframe(xx, yy, f[:, :, 0],
-                         rstride=10, cstride=10, color='green')
+                         rstride=10, cstride=10, color='grey')
 ax.set_zlim(-0.25, 1.0)
 
 writer = animation.FFMpegWriter(fps=30, bitrate=2400)
@@ -54,10 +54,10 @@ with writer.saving(fig, "wave_2d.mp4", dpi=150):
         # update surface & wireframe
         surf.remove(); wire.remove()
         surf = ax.plot_surface(xx, yy, f[:, :, 1],
-                               rstride=1, cstride=1, cmap=cm.coolwarm,
+                               rstride=1, cstride=1, cmap=cm.Spectral,
                                linewidth=0, antialiased=False)
         wire = ax.plot_wireframe(xx, yy, f[:, :, 1],
-                                 rstride=10, cstride=10, color='green')
+                                 rstride=10, cstride=10, color='grey')
         ax.set_title(f"t = {k*dt:.2f}")
         writer.grab_frame()
 
