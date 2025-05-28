@@ -1,11 +1,9 @@
 """Deep water gravity wave example using the consolidated solver."""
 
-import matplotlib.pyplot as plt
 import numpy as np
-import imageio.v2 as imageio
-import os
 
 from wave_sim import DeepWaterGravityWave
+from wave_sim.animation_utils import generate_1d_animation, DEFAULT_OUTPUT_DIR_1D
 from wave_sim.initial_conditions import gaussian_1d
 
 
@@ -17,7 +15,7 @@ def eta0(x):
 def deta0_dt(x):
     return np.zeros_like(x)
 
-DEFAULT_OUTPUT_DIR = "output_1d_animations_individual"
+DEFAULT_OUTPUT_DIR = DEFAULT_OUTPUT_DIR_1D
 
 
 def generate_animation(
@@ -25,9 +23,6 @@ def generate_animation(
     out_name: str = "deep_water_gravity_wave.mp4",
     steps: int | None = None,
 ) -> str:
-    os.makedirs(output_dir, exist_ok=True)
-    out_path = os.path.join(output_dir, out_name)
-
     L_domain = 2 * np.pi
     Nx_points = 256
     T_duration = 2.0
@@ -38,27 +33,16 @@ def generate_animation(
     sim = DeepWaterGravityWave(L=L_domain, Nx=Nx_points, g=g_val, dt=dt_val, T=T_duration)
     sim.initial_conditions(eta0, deta0_dt)
 
-    writer = imageio.get_writer(out_path, fps=30)
-    fig, ax = plt.subplots(figsize=(8, 4))
-
-    nsteps = sim.nt if steps is None else min(steps, sim.nt)
-    for i in range(nsteps):
-        sim.step()
-        ax.clear()
-        ax.plot(sim.x, sim.eta_now)
-        ax.set_ylim(-1.2, 1.2)
-        ax.set_xlabel("x")
-        ax.set_ylabel("Surface elevation")
-        ax.set_title(f"Deep Water Gravity Wave, Time: {i*sim.dt:.3f}s")
-        fig.canvas.draw()
-        img = np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
-        img = img.reshape(fig.canvas.get_width_height()[::-1] + (3,))
-        writer.append_data(img)
-
-    writer.close()
-    plt.close(fig)
-    print(f"Generated 1D animation: {out_path}")
-    return out_path
+    return generate_1d_animation(
+        solver=sim,
+        out_name=out_name,
+        plot_variable_name="eta_now",
+        title_prefix="Deep Water Gravity Wave",
+        y_label="Surface elevation",
+        output_dir=output_dir,
+        y_lims=(-1.2, 1.2),
+        total_steps=steps,
+    )
 
 
 if __name__ == "__main__":

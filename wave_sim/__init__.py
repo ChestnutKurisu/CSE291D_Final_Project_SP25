@@ -57,6 +57,7 @@ from .dispersion import (
     scholte_wave_speed,
 )
 from .collage import collage_videos
+from .animation_utils import generate_1d_animation, DEFAULT_OUTPUT_DIR_1D
 
 __all__ = [
     "WaveSimulator2D",
@@ -109,4 +110,6 @@ __all__ = [
     "stoneley_wave_speed",
     "scholte_wave_speed",
     "collage_videos",
+    "generate_1d_animation",
+    "DEFAULT_OUTPUT_DIR_1D",
 ]

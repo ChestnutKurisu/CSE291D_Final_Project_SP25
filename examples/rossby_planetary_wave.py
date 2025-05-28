@@ -34,13 +34,18 @@ def generate_animation(
     )
     writer = imageio.get_writer(out_path, fps=30)
     fig, ax = plt.subplots(figsize=(6, 5))
+    cbar = None
     nsteps = sim.nt if steps is None else min(steps, sim.nt)
-    for _ in range(nsteps):
+    for step_num in range(nsteps):
         sim.step()
         ax.clear()
-        ax.contourf(X, Y, sim.psi, levels=20, cmap="RdBu_r")
+        m = ax.contourf(X, Y, sim.psi, levels=20, cmap="RdBu_r")
+        if cbar is None:
+            cbar = fig.colorbar(m, ax=ax)
+        current_time = sim.t if hasattr(sim, "t") else (step_num + 1) * sim.dt
         ax.set_xlabel("x")
         ax.set_ylabel("y")
+        ax.set_title(f"Rossby Planetary Wave, Time: {current_time:.3f}s")
         fig.canvas.draw()
         img = np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
         img = img.reshape(fig.canvas.get_width_height()[::-1] + (3,))

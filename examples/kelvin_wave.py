@@ -1,18 +1,16 @@
 """Rotating shallow water Kelvin wave using the unified solver."""
 
-import matplotlib.pyplot as plt
 import numpy as np
-import imageio.v2 as imageio
-import os
 
 from wave_sim import KelvinWave
+from wave_sim.animation_utils import generate_1d_animation, DEFAULT_OUTPUT_DIR_1D
 
 
 def eta0(y):
     return np.exp(-((y - 2.5) / 0.5) ** 2)
 
 
-DEFAULT_OUTPUT_DIR = "output_1d_animations_individual"
+DEFAULT_OUTPUT_DIR = DEFAULT_OUTPUT_DIR_1D
 
 
 def generate_animation(
@@ -20,9 +18,6 @@ def generate_animation(
     out_name: str = "kelvin_wave.mp4",
     steps: int | None = None,
 ) -> str:
-    os.makedirs(output_dir, exist_ok=True)
-    out_path = os.path.join(output_dir, out_name)
-
     sim_L = 10.0
     sim_Ny = 800
     sim_T = 10.0
@@ -31,21 +26,18 @@ def generate_animation(
     dt_val = 0.4 * dy / c
     sim = KelvinWave(L=sim_L, Ny=sim_Ny, T=sim_T, dt=dt_val)
     sim.initial_conditions(eta0)
-    writer = imageio.get_writer(out_path, fps=30)
-    fig, ax = plt.subplots(figsize=(8, 4))
-    nsteps = sim.nt if steps is None else min(steps, sim.nt)
-    for _ in range(nsteps):
-        sim.step()
-        ax.clear()
-        ax.plot(sim.y, sim.eta)
-        ax.set_ylim(-1.1, 1.1)
-        fig.canvas.draw()
-        img = np.frombuffer(fig.canvas.tostring_rgb(), dtype=np.uint8)
-        img = img.reshape(fig.canvas.get_width_height()[::-1] + (3,))
-        writer.append_data(img)
-    writer.close()
-    plt.close(fig)
-    return out_path
+
+    return generate_1d_animation(
+        solver=sim,
+        out_name=out_name,
+        plot_variable_name="eta",
+        title_prefix="Kelvin Wave",
+        y_label="Surface displacement",
+        output_dir=output_dir,
+        y_lims=(-1.1, 1.1),
+        x_label="y",
+        total_steps=steps,
+    )
 
 
 if __name__ == "__main__":
