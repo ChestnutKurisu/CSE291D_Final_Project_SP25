@@ -22,6 +22,7 @@ class PWaveSimulation(WaveSimulation):
         kwargs.setdefault("c", 3000.0)
         kwargs.setdefault("dx", 5.0)
         kwargs.setdefault("dt", 0.0005)
+        kwargs.setdefault("backend", "gpu")
         super().__init__(**kwargs)
         self.f0 = f0
         if source_pos is None:
@@ -78,6 +79,7 @@ class SWaveSimulation(WaveSimulation):
         kwargs.setdefault("c", 1500.0)
         kwargs.setdefault("dx", 5.0)
         kwargs.setdefault("dt", 0.0005)
+        kwargs.setdefault("backend", "gpu")
         super().__init__(**kwargs)
         self.f0 = f0
         if source_pos is None:
