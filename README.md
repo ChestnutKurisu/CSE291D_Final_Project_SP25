@@ -37,3 +37,15 @@ The solver emits a warning if the CFL condition ``c * dt / dx`` exceeds
 Animations can be generated via ``examples/all_waves_collage.py`` which iterates
 over every class in the catalog and writes a short MP4 file for each one into an
 ``output`` directory.
+
+
+Additional standalone scripts in the ``examples`` directory demonstrate simple
+1‑D or spectral solvers for several textbook waves:
+
+* ``internal_gravity_wave.py`` – finite difference scheme for a stratified fluid.
+* ``kelvin_wave.py`` – rotating shallow water Kelvin wave.
+* ``rossby_planetary_wave.py`` – linear Rossby wave via FFTs.
+* ``flexural_beam_wave.py`` – Euler–Bernoulli beam equation.
+* ``alfven_wave.py`` – 1‑D Alfv\u00e9n wave along a magnetic field.
+
+Each script runs a short simulation and plots the final state when executed.
