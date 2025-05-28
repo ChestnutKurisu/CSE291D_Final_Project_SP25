@@ -26,6 +26,15 @@ from .wave_catalog import (
     AlfvenWave,
 )
 
+from .dispersion import (
+    rayleigh_wave_speed,
+    love_wave_dispersion,
+    lamb_s0_mode,
+    lamb_a0_mode,
+    stoneley_wave_speed,
+    scholte_wave_speed,
+)
+
 __all__ = [
     "WaveSimulation",
     "PWaveSimulation",
@@ -52,4 +61,10 @@ __all__ = [
     "RossbyPlanetaryWave",
     "FlexuralBeamWave",
     "AlfvenWave",
+    "rayleigh_wave_speed",
+    "love_wave_dispersion",
+    "lamb_s0_mode",
+    "lamb_a0_mode",
+    "stoneley_wave_speed",
+    "scholte_wave_speed",
 ]
