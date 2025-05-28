@@ -37,10 +37,23 @@ class WaveSimulator2D:
         Boundary condition.
     dx : float, optional
         Spatial resolution of the grid.  ``laplacian`` is scaled by ``1/dx^2``.
+    sponge_thickness : int, optional
+        Thickness of the absorbing sponge layer when ``boundary`` is
+        ``ABSORBING``.  A value of 0 disables the sponge.
     """
 
-    def __init__(self, width, height, scene_objects=None, initial_field=None,
-                 backend="gpu", boundary=BoundaryCondition.REFLECTIVE, dx=1.0, dt=1.0):
+    def __init__(
+        self,
+        width,
+        height,
+        scene_objects=None,
+        initial_field=None,
+        backend="gpu",
+        boundary=BoundaryCondition.REFLECTIVE,
+        dx=1.0,
+        dt=1.0,
+        sponge_thickness: int = 8,
+    ):
         self.xp = get_array_module(backend)
         xp = self.xp
 
@@ -63,6 +76,7 @@ class WaveSimulator2D:
         self.t = 0.0
         self.dt = dt
         self.dx = dx
+        self.sponge_thickness = int(sponge_thickness)
         self.scene_objects = scene_objects if scene_objects is not None else []
 
         self._render_scene_properties()
