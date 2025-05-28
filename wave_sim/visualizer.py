@@ -86,7 +86,6 @@ class WaveVisualizer:
         field = self.field_slice_to_visualize
 
         self.ax_main.clear()
-
         if self.dynamic_z:
             z_max = max(1e-6, np.percentile(np.abs(field), 99)) * 1.05
             self.ax_main.set_zlim(-z_max, z_max)
