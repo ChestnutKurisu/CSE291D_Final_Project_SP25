@@ -3,7 +3,16 @@
 from .simulator import WaveSimulator2D, SceneObject
 from .visualizer import WaveVisualizer, get_colormap_lut
 from .runner import simulate_wave
-from .scene_objects import PointSource, ConstantSpeed
+from .scene_objects import (
+    PointSource,
+    ConstantSpeed,
+    StaticDampening,
+    StaticRefractiveIndex,
+    StaticImageScene,
+    StrainRefractiveIndex,
+    StaticRefractiveIndexPolygon,
+    StaticRefractiveIndexBox,
+)
 
 __all__ = [
     "WaveSimulator2D",
@@ -13,4 +22,10 @@ __all__ = [
     "simulate_wave",
     "PointSource",
     "ConstantSpeed",
+    "StaticDampening",
+    "StaticRefractiveIndex",
+    "StaticImageScene",
+    "StrainRefractiveIndex",
+    "StaticRefractiveIndexPolygon",
+    "StaticRefractiveIndexBox",
 ]
