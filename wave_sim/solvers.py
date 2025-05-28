@@ -342,32 +342,23 @@ class ShallowWaterGravityWave:
         Qn = self.Q.copy()
         F = self.flux(Qn)
         Fnum = np.zeros_like(F)
+
+        # Interface fluxes (Rusanov)
         for i in range(self.Nx - 1):
-            QL = Qn[:, i]
-            QR = Qn[:, i + 1]
-            FL = F[:, i]
-            FR = F[:, i + 1]
+            QL, QR = Qn[:, i], Qn[:, i + 1]
+            FL, FR = F[:, i], F[:, i + 1]
             smax = self.max_wave_speed(QL, QR)
             Fnum[:, i] = 0.5 * (FL + FR) - 0.5 * smax * (QR - QL)
 
-        # Reflective boundaries via ghost cells
-        Q_left = Qn[:, 0].copy()
-        Q_left[1] *= -1
-        F_left = self.flux(Q_left)
-        smax_left = self.max_wave_speed(Q_left, Qn[:, 0])
-        Fghost_left = 0.5 * (F_left + F[:, 0]) - 0.5 * smax_left * (Qn[:, 0] - Q_left)
-
-        Q_right = Qn[:, -1].copy()
-        Q_right[1] *= -1
-        F_right = self.flux(Q_right)
-        smax_right = self.max_wave_speed(Qn[:, -1], Q_right)
-        Fghost_right = 0.5 * (F[:, -1] + F_right) - 0.5 * smax_right * (Q_right - Qn[:, -1])
-
+        # Interior update
         for i in range(1, self.Nx - 1):
-            self.Q[:, i] = Qn[:, i] - (self.dt / self.dx) * (Fnum[:, i] - Fnum[:, i - 1])
+            self.Q[:, i] = Qn[:, i] - (self.dt / self.dx) * (
+                Fnum[:, i] - Fnum[:, i - 1]
+            )
 
-        self.Q[:, 0] = Qn[:, 0] - (self.dt / self.dx) * (Fnum[:, 0] - Fghost_left)
-        self.Q[:, -1] = Qn[:, -1] - (self.dt / self.dx) * (Fghost_right - Fnum[:, -2])
+        # Open (zero-gradient) boundaries
+        self.Q[:, 0] = self.Q[:, 1]
+        self.Q[:, -1] = self.Q[:, -2]
 
     def solve(self) -> list[np.ndarray]:
         snapshots = [self.Q.copy()]

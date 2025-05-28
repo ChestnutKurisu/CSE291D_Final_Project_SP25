@@ -19,24 +19,41 @@ colormap_wave1 = np.array([
 ])
 
 
-def get_colormap_lut(name="wave1", invert=False, black_level=0.0, make_symmetric=False):
-    """Return a uint8 lookup table for the given colormap."""
+import matplotlib.pyplot as plt
+
+__LUT_CACHE = {}
+
+
+def get_colormap_lut(
+    name: str = "wave1",
+    invert: bool = False,
+    black_level: float = 0.0,
+    make_symmetric: bool = False,
+) -> np.ndarray:
+    """Return a 256×3 uint8 colour-map lookup table."""
+
+    global __LUT_CACHE
+    key = (name, invert, black_level, make_symmetric)
+    if key in __LUT_CACHE:
+        return __LUT_CACHE[key]
+
     if name == "wave1":
-        colors = colormap_wave1 / 255.0
+        base = colormap_wave1 / 255.0
+        t = np.linspace(0, 1, base.shape[0])
+        t256 = np.linspace(0, 1, 256)
+        colors = np.vstack([np.interp(t256, t, base[:, ch]) for ch in range(3)]).T
     else:
-        import matplotlib.pyplot as plt
-        cmap = plt.get_cmap(name)
-        colors = cmap(np.linspace(0, 1, 256))[:, :3]
+        colors = plt.get_cmap(name)(np.linspace(0, 1, 256))[:, :3]
 
     if invert:
         colors = 1.0 - colors
     if make_symmetric:
-        src = colors.copy()
-        colors[255:126:-1, :] = src[0:255:2, :]
-        colors[0:128, :] = src[0:255:2, :]
+        colors = np.vstack([colors[:128], colors[127::-1]])
 
     colors = np.clip(colors * (1.0 - black_level) + black_level, 0.0, 1.0)
-    return (colors * 255).astype(np.uint8)
+    lut = (colors * 255).astype(np.uint8)
+    __LUT_CACHE[key] = lut
+    return lut
 
 
 class WaveVisualizer:
