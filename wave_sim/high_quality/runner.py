@@ -4,12 +4,13 @@ import numpy as np
 import cv2
 
 from .simulator import WaveSimulator2D
+from ..core.boundary import BoundaryCondition
 from .visualizer import WaveVisualizer, get_colormap_lut
 
 
 def simulate_wave(scene_builder, out_path, steps=2000, sim_steps_per_frame=8,
                   resolution=(512, 512), fps=60, backend="gpu",
-                  boundary_condition="reflective", global_dampening=1.0):
+                  boundary_condition=BoundaryCondition.REFLECTIVE, global_dampening=1.0):
     """Run a high quality simulation and save to MP4."""
     objects, w, h, init = scene_builder(resolution)
     sim = WaveSimulator2D(
