@@ -58,17 +58,22 @@ class WaveSimulation:
         )
         u_next = 2 * self.u_curr - self.u_prev + c2 * laplacian
         if self.boundary == "reflective":
-            u_next[0, :] = 0
-            u_next[-1, :] = 0
-            u_next[:, 0] = 0
-            u_next[:, -1] = 0
-        elif self.boundary == "periodic":
-            pass  # np.roll already provides periodic boundaries
-        elif self.boundary == "absorbing":
+            # Zero normal derivative at the domain edges (simple Neumann)
             u_next[0, :] = u_next[1, :]
             u_next[-1, :] = u_next[-2, :]
             u_next[:, 0] = u_next[:, 1]
             u_next[:, -1] = u_next[:, -2]
+        elif self.boundary == "periodic":
+            pass  # np.roll already provides periodic boundaries
+        elif self.boundary == "absorbing":
+            # Simple damped border acting as a sponge layer
+            damp = 8
+            for i in range(damp):
+                factor = (damp - i) / damp
+                u_next[i, :] *= factor
+                u_next[-1 - i, :] *= factor
+                u_next[:, i] *= factor
+                u_next[:, -1 - i] *= factor
         else:
             raise ValueError(f"Unknown boundary condition {self.boundary}")
         self.u_prev, self.u_curr = self.u_curr, u_next
