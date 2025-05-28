@@ -16,7 +16,14 @@ from typing import Optional
 class PlaneAcousticWave:
     """Solve the one-dimensional acoustic wave equation."""
 
-    def __init__(self, c: float = 1.0, L: float = 1.0, Nx: int = 200, dt: float = 0.001, T: float = 1.0) -> None:
+    def __init__(
+        self,
+        c: float = 1.0,
+        L: float = 1.0,
+        Nx: int = 200,
+        dt: float = 0.001,
+        T: float = 1.0,
+    ) -> None:
         self.c = c
         self.L = L
         self.Nx = Nx
@@ -46,8 +53,8 @@ class PlaneAcousticWave:
         arr[-1] = 0.0
 
     def step(self) -> None:
-        c2 = self.c ** 2
-        r = c2 * (self.dt ** 2 / self.dx ** 2)
+        c2 = self.c**2
+        r = c2 * (self.dt**2 / self.dx**2)
         for i in range(1, self.Nx):
             self.p_next[i] = (
                 2.0 * self.p_now[i]
@@ -68,7 +75,14 @@ class PlaneAcousticWave:
 class SphericalAcousticWave:
     """Solve the spherically symmetric acoustic wave equation."""
 
-    def __init__(self, c: float = 1.0, R: float = 2.0, Nr: int = 200, dt: float = 0.001, T: float = 1.0) -> None:
+    def __init__(
+        self,
+        c: float = 1.0,
+        R: float = 2.0,
+        Nr: int = 200,
+        dt: float = 0.001,
+        T: float = 1.0,
+    ) -> None:
         self.c = c
         self.R = R
         self.Nr = Nr
@@ -97,7 +111,7 @@ class SphericalAcousticWave:
         arr[-1] = 0.0
 
     def step(self) -> None:
-        rfac = self.c ** 2 * self.dt ** 2 / (self.dr ** 2)
+        rfac = self.c**2 * self.dt**2 / (self.dr**2)
         for i in range(1, self.Nr):
             r_i = self.r[i]
             dpdr_plus = self.p_now[i + 1] - self.p_now[i]
@@ -107,7 +121,7 @@ class SphericalAcousticWave:
             self.p_next[i] = (
                 2.0 * self.p_now[i]
                 - self.p_prev[i]
-                + rfac * (term_plus - term_minus) / ((r_i ** 2) * self.dr)
+                + rfac * (term_plus - term_minus) / ((r_i**2) * self.dr)
             )
         self.apply_boundary_conditions(self.p_next)
         self.p_prev, self.p_now, self.p_next = self.p_now, self.p_next, self.p_prev
@@ -123,7 +137,14 @@ class SphericalAcousticWave:
 class DeepWaterGravityWave:
     """Spectral solver for 1-D deep-water gravity waves."""
 
-    def __init__(self, L: float = 2 * np.pi, Nx: int = 256, g: float = 9.81, dt: float = 0.01, T: float = 2.0) -> None:
+    def __init__(
+        self,
+        L: float = 2 * np.pi,
+        Nx: int = 256,
+        g: float = 9.81,
+        dt: float = 0.01,
+        T: float = 2.0,
+    ) -> None:
         self.L = L
         self.Nx = Nx
         self.dx = L / Nx
@@ -152,7 +173,7 @@ class DeepWaterGravityWave:
         eta_hat_next = np.zeros_like(self.eta_hat_now, dtype=np.complex128)
         for i in range(len(self.k)):
             k_abs = abs(self.k[i])
-            alpha = self.g * k_abs * (self.dt ** 2)
+            alpha = self.g * k_abs * (self.dt**2)
             eta_hat_next[i] = (2.0 - alpha) * self.eta_hat_now[i] - self.eta_hat_prev[i]
         self.eta_hat_prev = self.eta_hat_now
         self.eta_hat_now = eta_hat_next
@@ -169,7 +190,14 @@ class DeepWaterGravityWave:
 class ShallowWaterGravityWave:
     """Rusanov finite-volume solver for 1-D shallow water equations."""
 
-    def __init__(self, g: float = 9.81, L: float = 10.0, Nx: int = 200, dt: float = 0.001, T: float = 2.0) -> None:
+    def __init__(
+        self,
+        g: float = 9.81,
+        L: float = 10.0,
+        Nx: int = 200,
+        dt: float = 0.001,
+        T: float = 2.0,
+    ) -> None:
         self.g = g
         self.L = L
         self.Nx = Nx
@@ -238,7 +266,15 @@ class ShallowWaterGravityWave:
 class CapillaryWave:
     """Finite-difference solver for linear capillary waves."""
 
-    def __init__(self, L: float = 2 * np.pi, Nx: int = 256, sigma: float = 0.074, rho: float = 1000.0, dt: float = 0.0001, T: float = 0.1) -> None:
+    def __init__(
+        self,
+        L: float = 2 * np.pi,
+        Nx: int = 256,
+        sigma: float = 0.074,
+        rho: float = 1000.0,
+        dt: float = 0.0001,
+        T: float = 0.1,
+    ) -> None:
         self.L = L
         self.Nx = Nx
         self.dx = L / Nx
@@ -272,11 +308,15 @@ class CapillaryWave:
         )
 
     def step(self) -> None:
-        coef = (self.sigma / self.rho) * (self.dt ** 2) / (self.dx ** 4)
+        coef = (self.sigma / self.rho) * (self.dt**2) / (self.dx**4)
         for i in range(self.Nx):
             d4 = self.fourth_deriv(self.eta_now, i)
             self.eta_next[i] = 2.0 * self.eta_now[i] - self.eta_prev[i] - coef * d4
-        self.eta_prev, self.eta_now, self.eta_next = self.eta_now, self.eta_next, self.eta_prev
+        self.eta_prev, self.eta_now, self.eta_next = (
+            self.eta_now,
+            self.eta_next,
+            self.eta_prev,
+        )
 
     def solve(self) -> np.ndarray:
         snapshots = [self.eta_now.copy()]
@@ -293,7 +333,14 @@ class InternalGravityWave:
     differences in space and time.
     """
 
-    def __init__(self, N: float = 1.0, L: float = 2.0, Nx: int = 800, dt: Optional[float] = None, T: float = 1.0) -> None:
+    def __init__(
+        self,
+        N: float = 1.0,
+        L: float = 2.0,
+        Nx: int = 800,
+        dt: Optional[float] = None,
+        T: float = 1.0,
+    ) -> None:
         c = N
         self.N = N
         self.L = L
@@ -320,17 +367,22 @@ class InternalGravityWave:
             self.psi_prev[:] = self.psi_now[:]
 
     def step(self) -> None:
-        c2 = self.N ** 2
-        r = c2 * (self.dt ** 2 / self.dx ** 2)
+        c2 = self.N**2
+        r = c2 * (self.dt**2 / self.dx**2)
         for i in range(1, self.Nx):
             self.psi_next[i] = (
                 2.0 * self.psi_now[i]
                 - self.psi_prev[i]
-                + r * (self.psi_now[i + 1] - 2.0 * self.psi_now[i] + self.psi_now[i - 1])
+                + r
+                * (self.psi_now[i + 1] - 2.0 * self.psi_now[i] + self.psi_now[i - 1])
             )
         self.psi_next[0] = 0.0
         self.psi_next[-1] = 0.0
-        self.psi_prev, self.psi_now, self.psi_next = self.psi_now, self.psi_next, self.psi_prev
+        self.psi_prev, self.psi_now, self.psi_next = (
+            self.psi_now,
+            self.psi_next,
+            self.psi_prev,
+        )
 
     def solve(self) -> np.ndarray:
         sol = [self.psi_now.copy()]
@@ -352,7 +404,16 @@ class KelvinWave:
     with centred finite differences along the ``y`` direction.
     """
 
-    def __init__(self, L: float = 10.0, Ny: int = 800, H: float = 1.0, f: float = 1.0, g: float = 9.81, dt: Optional[float] = None, T: float = 10.0) -> None:
+    def __init__(
+        self,
+        L: float = 10.0,
+        Ny: int = 800,
+        H: float = 1.0,
+        f: float = 1.0,
+        g: float = 9.81,
+        dt: Optional[float] = None,
+        T: float = 10.0,
+    ) -> None:
         self.L = L
         self.Ny = Ny
         self.dy = L / (Ny - 1)
@@ -379,14 +440,16 @@ class KelvinWave:
         v_new = self.v.copy()
         eta_new = self.eta.copy()
         for j in range(1, self.Ny - 1):
-            du = -self.g * (self.eta[j + 1] - self.eta[j - 1]) / (2 * self.dy) + self.f * self.v[j]
+            du = (
+                -self.g * (self.eta[j + 1] - self.eta[j - 1]) / (2 * self.dy)
+                + self.f * self.v[j]
+            )
             dv = -self.f * self.u[j]
             deta = -self.H * (self.u[j + 1] - self.u[j - 1]) / (2 * self.dy)
             u_new[j] = self.u[j] + self.dt * du
             v_new[j] = self.v[j] + self.dt * dv
             eta_new[j] = self.eta[j] + self.dt * deta
         # Left boundary (coast): u=0, one-sided differences for eta and u gradients
-        du0 = -self.g * (self.eta[1] - self.eta[0]) / self.dy + self.f * self.v[0]
         dv0 = -self.f * self.u[0]
         deta0 = -self.H * (self.u[1] - self.u[0]) / self.dy
         u_new[0] = 0.0
@@ -413,7 +476,16 @@ class RossbyPlanetaryWave:
     Integrates ``(∇²ψ)_t + β ψ_x = 0`` on a periodic domain using FFTs.
     """
 
-    def __init__(self, Nx: int = 256, Ny: int = 256, Lx: float = 2 * np.pi, Ly: float = 2 * np.pi, beta: float = 1.0, dt: float = 0.01, T: float = 2.0) -> None:
+    def __init__(
+        self,
+        Nx: int = 256,
+        Ny: int = 256,
+        Lx: float = 2 * np.pi,
+        Ly: float = 2 * np.pi,
+        beta: float = 1.0,
+        dt: float = 0.01,
+        T: float = 2.0,
+    ) -> None:
         self.Nx = Nx
         self.Ny = Ny
         self.Lx = Lx
@@ -428,7 +500,7 @@ class RossbyPlanetaryWave:
         self.kx = np.fft.fftfreq(Nx, d=self.dx) * 2 * np.pi
         self.ky = np.fft.fftfreq(Ny, d=self.dy) * 2 * np.pi
         self.kx2D, self.ky2D = np.meshgrid(self.kx, self.ky, indexing="ij")
-        self.k2 = self.kx2D ** 2 + self.ky2D ** 2
+        self.k2 = self.kx2D**2 + self.ky2D**2
         self.k2[0, 0] = 1e-14
 
         self.psi_hat = np.zeros((Nx, Ny), dtype=np.complex128)
@@ -465,14 +537,21 @@ class FlexuralBeamWave:
     in space and a leapfrog update in time.
     """
 
-    def __init__(self, D: float = 0.01, L: float = 2.0, Nx: int = 801, dt: Optional[float] = None, T: float = 5.0) -> None:
+    def __init__(
+        self,
+        D: float = 0.01,
+        L: float = 2.0,
+        Nx: int = 801,
+        dt: Optional[float] = None,
+        T: float = 5.0,
+    ) -> None:
         self.D = D
         self.L = L
         self.Nx = Nx
         self.x = np.linspace(0, L, Nx)
         self.dx = self.x[1] - self.x[0]
         if dt is None:
-            dt = 0.2 * self.dx ** 2 / np.sqrt(D)
+            dt = 0.2 * self.dx**2 / np.sqrt(D)
         self.dt = dt
         self.T = T
         self.nt = int(T // dt)
@@ -487,11 +566,11 @@ class FlexuralBeamWave:
 
     def step(self) -> None:
         for i in range(2, self.Nx - 2):
-            w_xx = (self.w[i + 1] - 2 * self.w[i] + self.w[i - 1]) / self.dx ** 2
-            w_xx_plus = (self.w[i + 2] - 2 * self.w[i + 1] + self.w[i]) / self.dx ** 2
-            w_xx_minus = (self.w[i] - 2 * self.w[i - 1] + self.w[i - 2]) / self.dx ** 2
-            w_xxxx = (w_xx_plus - 2 * w_xx + w_xx_minus) / self.dx ** 2
-            self.w_new[i] = 2 * self.w[i] - self.w_old[i] - self.dt ** 2 * self.D * w_xxxx
+            w_xx = (self.w[i + 1] - 2 * self.w[i] + self.w[i - 1]) / self.dx**2
+            w_xx_plus = (self.w[i + 2] - 2 * self.w[i + 1] + self.w[i]) / self.dx**2
+            w_xx_minus = (self.w[i] - 2 * self.w[i - 1] + self.w[i - 2]) / self.dx**2
+            w_xxxx = (w_xx_plus - 2 * w_xx + w_xx_minus) / self.dx**2
+            self.w_new[i] = 2 * self.w[i] - self.w_old[i] - self.dt**2 * self.D * w_xxxx
         self.w_new[0] = 0.0
         self.w_new[1] = 0.0
         self.w_new[-1] = 0.0
@@ -512,7 +591,16 @@ class AlfvenWave:
     The update solves ``v_tt = v_A**2 * v_xx`` with Dirichlet boundaries.
     """
 
-    def __init__(self, B0: float = 1.0, rho: float = 1.0, mu0: float = 1.0, L: float = 2.0, Nx: int = 800, dt: Optional[float] = None, T: float = 2.0) -> None:
+    def __init__(
+        self,
+        B0: float = 1.0,
+        rho: float = 1.0,
+        mu0: float = 1.0,
+        L: float = 2.0,
+        Nx: int = 800,
+        dt: Optional[float] = None,
+        T: float = 2.0,
+    ) -> None:
         self.B0 = B0
         self.rho = rho
         self.mu0 = mu0
@@ -540,7 +628,8 @@ class AlfvenWave:
             self.v_new[i] = (
                 2 * self.v[i]
                 - self.v_old[i]
-                + (self.vA * self.dt / self.dx) ** 2 * (self.v[i + 1] - 2 * self.v[i] + self.v[i - 1])
+                + (self.vA * self.dt / self.dx) ** 2
+                * (self.v[i + 1] - 2 * self.v[i] + self.v[i - 1])
             )
         self.v_new[0] = 0.0
         self.v_new[-1] = 0.0

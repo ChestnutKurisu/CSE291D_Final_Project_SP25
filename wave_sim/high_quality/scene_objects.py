@@ -36,6 +36,7 @@ class PointSource(SceneObject):
         if 0 <= self.y < image.shape[0] and 0 <= self.x < image.shape[1]:
             cv2.circle(image, (self.x, self.y), 3, (50, 50, 50), -1)
 
+
 class ConstantSpeed(SceneObject):
     def __init__(self, speed):
         self.speed = float(speed)
@@ -59,10 +60,10 @@ class StaticDampening(SceneObject):
         h, w = self.d.shape
         for i in range(border_thickness):
             v = (i / border_thickness) ** 0.5
-            self.d[i, i:w - i] = v
-            self.d[h - 1 - i, i:w - i] = v
-            self.d[i:h - i, i] = v
-            self.d[i:h - i, w - 1 - i] = v
+            self.d[i, i : w - i] = v
+            self.d[h - 1 - i, i : w - i] = v
+            self.d[i : h - i, i] = v
+            self.d[i : h - i, w - 1 - i] = v
 
     def render(self, field, wave_speed_field, dampening_field):
         dampening_field[:] = self.d
@@ -78,7 +79,9 @@ class StaticRefractiveIndex(SceneObject):
     """Fixed refractive index field converted to wave speed."""
 
     def __init__(self, refractive_index_field):
-        self.c = 1.0 / XP.clip(XP.asarray(refractive_index_field, dtype=XP.float32), 0.9, 10.0)
+        self.c = 1.0 / XP.clip(
+            XP.asarray(refractive_index_field, dtype=XP.float32), 0.9, 10.0
+        )
 
     def render(self, field, wave_speed_field, dampening_field):
         wave_speed_field[:] = self.c
@@ -96,12 +99,21 @@ class StaticImageScene(SceneObject):
     def __init__(self, scene_image, source_amplitude=1.0, source_frequency_scale=1.0):
         self.source_opacity = 0.9
         self.refractive_index = StaticRefractiveIndex(scene_image[:, :, 0] / 100)
-        self.dampening = StaticDampening(1.0 - scene_image[:, :, 2] / 255, border_thickness=48)
+        self.dampening = StaticDampening(
+            1.0 - scene_image[:, :, 2] / 255, border_thickness=48
+        )
 
         sources_pos = np.flip(np.argwhere(scene_image[:, :, 1] > 0), axis=1)
-        phase_amp_freq = np.tile(np.array([0, source_amplitude, 0.3]), (sources_pos.shape[0], 1))
+        phase_amp_freq = np.tile(
+            np.array([0, source_amplitude, 0.3]), (sources_pos.shape[0], 1)
+        )
         sources = np.concatenate((sources_pos, phase_amp_freq), axis=1)
-        sources[:, 4] = scene_image[sources_pos[:, 1], sources_pos[:, 0], 1] / 255 * 0.5 * source_frequency_scale
+        sources[:, 4] = (
+            scene_image[sources_pos[:, 1], sources_pos[:, 0], 1]
+            / 255
+            * 0.5
+            * source_frequency_scale
+        )
         self.sources = XP.asarray(sources, dtype=XP.float32)
 
     def render(self, field, wave_speed_field, dampening_field):
@@ -113,7 +125,9 @@ class StaticImageScene(SceneObject):
         v = xp.sin(self.sources[:, 2] + self.sources[:, 4] * t) * self.sources[:, 3]
         coords = self.sources[:, 0:2].astype(xp.int32)
         o = self.source_opacity
-        field[coords[:, 1], coords[:, 0]] = field[coords[:, 1], coords[:, 0]] * o + v * (1.0 - o)
+        field[coords[:, 1], coords[:, 0]] = field[
+            coords[:, 1], coords[:, 0]
+        ] * o + v * (1.0 - o)
 
     def render_visualization(self, image):
         pass
@@ -133,13 +147,24 @@ class StrainRefractiveIndex(SceneObject):
         xp = XP
         if cp is not None and xp is cp:
             import cupyx.scipy.signal as sig
-            du_dx = sig.convolve2d(field, self.du_dx_kernel, mode="same", boundary="fill")
-            du_dy = sig.convolve2d(field, self.du_dy_kernel, mode="same", boundary="fill")
+
+            du_dx = sig.convolve2d(
+                field, self.du_dx_kernel, mode="same", boundary="fill"
+            )
+            du_dy = sig.convolve2d(
+                field, self.du_dy_kernel, mode="same", boundary="fill"
+            )
         else:
-            du_dx = scipy.signal.convolve2d(field, self.du_dx_kernel, mode="same", boundary="fill")
-            du_dy = scipy.signal.convolve2d(field, self.du_dy_kernel, mode="same", boundary="fill")
-        self.strain_field = xp.sqrt(du_dx ** 2 + du_dy ** 2)
-        n_field = self.refractive_index_offset + self.strain_field * self.coupling_constant
+            du_dx = scipy.signal.convolve2d(
+                field, self.du_dx_kernel, mode="same", boundary="fill"
+            )
+            du_dy = scipy.signal.convolve2d(
+                field, self.du_dy_kernel, mode="same", boundary="fill"
+            )
+        self.strain_field = xp.sqrt(du_dx**2 + du_dy**2)
+        n_field = (
+            self.refractive_index_offset + self.strain_field * self.coupling_constant
+        )
         wave_speed_field[:] = 1.0 / xp.clip(n_field, 0.9, 10.0)
 
     def update_field(self, field, t):
@@ -191,7 +216,9 @@ class StaticRefractiveIndexPolygon(SceneObject):
     def render(self, field, wave_speed_field, dampening_field):
         coords, mask_values = self._create_polygon_data(wave_speed_field.shape)
         bg = wave_speed_field[coords[0], coords[1]]
-        wave_speed_field[coords[0], coords[1]] = bg * (1.0 - mask_values) + mask_values / self.refractive_index
+        wave_speed_field[coords[0], coords[1]] = (
+            bg * (1.0 - mask_values) + mask_values / self.refractive_index
+        )
 
     def update_field(self, field, t):
         pass
@@ -200,19 +227,21 @@ class StaticRefractiveIndexPolygon(SceneObject):
         vertices = np.round(self.vertices).astype(np.int32)
         cv2.fillPoly(image, [vertices], (60, 60, 60), lineType=cv2.LINE_AA)
 
-
     @classmethod
     def create_box(cls, center, box_size, angle_rad, refractive_index):
         cx, cy = center
         width, height = box_size
         half_w = width / 2.0
         half_h = height / 2.0
-        local_vertices = np.array([
-            [-half_w, -half_h],
-            [half_w, -half_h],
-            [half_w, half_h],
-            [-half_w, half_h],
-        ], dtype=np.float32)
+        local_vertices = np.array(
+            [
+                [-half_w, -half_h],
+                [half_w, -half_h],
+                [half_w, half_h],
+                [-half_w, half_h],
+            ],
+            dtype=np.float32,
+        )
         rot = cv2.getRotationMatrix2D((0, 0), np.rad2deg(angle_rad), 1.0)
         rotated = cv2.transform(np.array([local_vertices]), rot)[0]
         translated = rotated + [cx, cy]
@@ -280,6 +309,46 @@ class ModulatorSmoothSquare:
         self.smoothness = max(min(smoothness, 1.0), 1e-4)
 
     def __call__(self, t):
-        s = self.smoothness ** 4
-        return 0.5 + 0.5 * math.atan(math.sin(self.frequency * t + self.phase) / s) / math.atan(1.0 / s)
+        s = self.smoothness**4
+        return 0.5 + 0.5 * math.atan(
+            math.sin(self.frequency * t + self.phase) / s
+        ) / math.atan(1.0 / s)
 
+
+class ModulatorDiscreteSignal:
+    """Sampled amplitude modulator."""
+
+    def __init__(self, samples, sample_rate=1.0):
+        self.samples = np.asarray(samples, dtype=float)
+        self.sample_rate = float(sample_rate)
+
+    def __call__(self, t):
+        if self.sample_rate <= 0:
+            return 0.0
+        idx = t * self.sample_rate
+        i0 = int(np.floor(idx))
+        i1 = i0 + 1
+        frac = idx - i0
+        if i0 < 0 or i0 >= len(self.samples):
+            return 0.0
+        if i1 >= len(self.samples):
+            return float(self.samples[i0])
+        return float(self.samples[i0] * (1 - frac) + self.samples[i1] * frac)
+
+
+class MovingPointSource(PointSource):
+    """Point source that moves with constant velocity."""
+
+    def __init__(self, x, y, vx, vy, freq=0.1, amplitude=1.0):
+        super().__init__(x, y, freq=freq, amplitude=amplitude)
+        self._x = float(x)
+        self._y = float(y)
+        self.vx = float(vx)
+        self.vy = float(vy)
+
+    def update_field(self, field, t):
+        self._x += self.vx
+        self._y += self.vy
+        self.x = int(round(self._x))
+        self.y = int(round(self._y))
+        super().update_field(field, t)

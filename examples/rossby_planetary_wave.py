@@ -32,7 +32,7 @@ def generate_animation(out_name="rossby_planetary_wave.mp4"):
     for _ in range(sim.nt):
         sim.step()
         ax.clear()
-        cf = ax.contourf(X, Y, sim.psi, levels=20, cmap="RdBu_r")
+        ax.contourf(X, Y, sim.psi, levels=20, cmap="RdBu_r")
         ax.set_xlabel("x")
         ax.set_ylabel("y")
         fig.canvas.draw()
@@ -47,4 +47,3 @@ def generate_animation(out_name="rossby_planetary_wave.mp4"):
 if __name__ == "__main__":
     path = generate_animation()
     print(f"Wrote {path}")
-

@@ -39,8 +39,17 @@ class WaveSimulator2D:
         Spatial resolution of the grid.  ``laplacian`` is scaled by ``1/dx^2``.
     """
 
-    def __init__(self, width, height, scene_objects=None, initial_field=None,
-                 backend="gpu", boundary=BoundaryCondition.REFLECTIVE, dx=1.0, dt=1.0):
+    def __init__(
+        self,
+        width,
+        height,
+        scene_objects=None,
+        initial_field=None,
+        backend="gpu",
+        boundary=BoundaryCondition.REFLECTIVE,
+        dx=1.0,
+        dt=1.0,
+    ):
         self.xp = get_array_module(backend)
         xp = self.xp
 
@@ -91,6 +100,7 @@ class WaveSimulator2D:
             bmode = "fill"
         if xp.__name__ == "cupy":
             import cupyx.scipy.signal  # type: ignore
+
             laplacian = xp.asarray(
                 cupyx.scipy.signal.convolve2d(
                     self.u, self.laplacian_kernel, mode="same", boundary=bmode
@@ -123,7 +133,6 @@ class WaveSimulator2D:
         return self.u
 
     def render_visualization(self, image=None):
-        xp = self.xp
         if image is None:
             image = np.zeros((self.c.shape[0], self.c.shape[1], 3), dtype=np.uint8)
         for obj in self.scene_objects:
