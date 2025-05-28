@@ -79,26 +79,71 @@ class SVWave(Wave2DConfig):
 
 
 class RayleighWave(Wave2DConfig):
+    """PLACEHOLDER: uses scalar solver with tuned speed only.
+
+    A real Rayleigh wave arises from coupled P-- and S--wave motion
+    in an elastic half‐space.  This configuration merely reuses the
+    scalar ``WaveSimulator2D`` and so lacks the correct elliptic
+    particle motion or dispersion.  It is included for illustrative
+    purposes only.
+    """
+
     default_speed = 1300.0
 
 
 class LoveWave(Wave2DConfig):
+    """PLACEHOLDER: horizontally polarised surface shear.
+
+    The model again relies on the scalar wave equation and therefore
+    omits the vector shear‐strain behaviour that characterises real
+    Love waves.  Only the propagation speed is representative.
+    """
+
     default_speed = 1400.0
 
 
 class LambS0Mode(Wave2DConfig):
+    """PLACEHOLDER: symmetric Lamb mode.
+
+    This class simply sets a constant phase speed for a plate wave but
+    does not implement the frequency‐dependent dispersion of true Lamb
+    modes in elastic plates.
+    """
+
     default_speed = 2000.0
 
 
 class LambA0Mode(Wave2DConfig):
+    """PLACEHOLDER: antisymmetric Lamb mode.
+
+    As with ``LambS0Mode`` this uses the scalar solver and ignores the
+    dispersive nature of real A0 plate waves.  It should be viewed as an
+    illustrative demo rather than a physically faithful model.
+    """
+
     default_speed = 1000.0
 
 
 class StoneleyWave(Wave2DConfig):
+    """PLACEHOLDER: interface wave at a solid–solid boundary.
+
+    Stoneley waves involve coupled shear motion across a material
+    interface.  This simplified configuration propagates a scalar field
+    with a single constant speed and therefore lacks the characteristic
+    vector displacements.
+    """
+
     default_speed = 1200.0
 
 
 class ScholteWave(Wave2DConfig):
+    """PLACEHOLDER: ocean–bottom interface wave.
+
+    Real Scholte waves arise from an elastic–fluid boundary and exhibit
+    strong dispersion.  Here we merely reuse the scalar solver with a
+    fixed speed, so the behaviour is only qualitatively similar.
+    """
+
     default_speed = 900.0
 
 
