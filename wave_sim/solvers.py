@@ -349,12 +349,25 @@ class ShallowWaterGravityWave:
             FR = F[:, i + 1]
             smax = self.max_wave_speed(QL, QR)
             Fnum[:, i] = 0.5 * (FL + FR) - 0.5 * smax * (QR - QL)
+
+        # Reflective boundaries via ghost cells
+        Q_left = Qn[:, 0].copy()
+        Q_left[1] *= -1
+        F_left = self.flux(Q_left)
+        smax_left = self.max_wave_speed(Q_left, Qn[:, 0])
+        Fghost_left = 0.5 * (F_left + F[:, 0]) - 0.5 * smax_left * (Qn[:, 0] - Q_left)
+
+        Q_right = Qn[:, -1].copy()
+        Q_right[1] *= -1
+        F_right = self.flux(Q_right)
+        smax_right = self.max_wave_speed(Qn[:, -1], Q_right)
+        Fghost_right = 0.5 * (F[:, -1] + F_right) - 0.5 * smax_right * (Q_right - Qn[:, -1])
+
         for i in range(1, self.Nx - 1):
             self.Q[:, i] = Qn[:, i] - (self.dt / self.dx) * (Fnum[:, i] - Fnum[:, i - 1])
-        self.Q[:, 0] = Qn[:, 0] - (self.dt / self.dx) * (Fnum[:, 0] - Fnum[:, 0])
-        self.Q[:, -1] = Qn[:, -1] - (self.dt / self.dx) * (
-            Fnum[:, self.Nx - 2] - Fnum[:, self.Nx - 2]
-        )
+
+        self.Q[:, 0] = Qn[:, 0] - (self.dt / self.dx) * (Fnum[:, 0] - Fghost_left)
+        self.Q[:, -1] = Qn[:, -1] - (self.dt / self.dx) * (Fghost_right - Fnum[:, -2])
 
     def solve(self) -> list[np.ndarray]:
         snapshots = [self.Q.copy()]
@@ -514,9 +527,15 @@ class KelvinWave:
             u_new[j] = self.u[j] + self.dt * du
             v_new[j] = self.v[j] + self.dt * dv
             eta_new[j] = self.eta[j] + self.dt * deta
+        # Left boundary (coast): u=0, one-sided differences for eta and u gradients
+        du0 = -self.g * (self.eta[1] - self.eta[0]) / self.dy + self.f * self.v[0]
+        dv0 = -self.f * self.u[0]
+        deta0 = -self.H * (self.u[1] - self.u[0]) / self.dy
         u_new[0] = 0.0
-        v_new[0] = 0.0
-        eta_new[0] = self.eta[0]
+        v_new[0] = self.v[0] + self.dt * dv0
+        eta_new[0] = self.eta[0] + self.dt * deta0
+
+        # Right boundary: simple open (zero-gradient) condition
         u_new[-1] = self.u[-1]
         v_new[-1] = self.v[-1]
         eta_new[-1] = self.eta[-1]
