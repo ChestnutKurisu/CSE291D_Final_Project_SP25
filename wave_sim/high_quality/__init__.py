@@ -14,6 +14,8 @@ from .scene_objects import (
     GaussianBlobSource,
     LineSource,
     ModulatorSmoothSquare,
+    ModulatorDiscreteSignal,
+    GaussianBlobSource,
 )
 
 __all__ = [
@@ -32,4 +34,6 @@ __all__ = [
     "GaussianBlobSource",
     "LineSource",
     "ModulatorSmoothSquare",
+    "ModulatorDiscreteSignal",
+    "GaussianBlobSource",
 ]
