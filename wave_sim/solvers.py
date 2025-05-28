@@ -31,24 +31,25 @@ class PWaveSimulation(WaveSimulation):
         self.initialize(amplitude=0.0, source_func=source_func)
 
     @staticmethod
-    def ricker_wavelet(t, f0):
+    def ricker_wavelet(t, f0, xp=np):
         tau = 1.0 / f0
-        return (1.0 - 2.0 * (np.pi ** 2) * (f0 ** 2) * (t - tau) ** 2) * np.exp(
-            -(np.pi ** 2) * (f0 ** 2) * (t - tau) ** 2
+        return (1.0 - 2.0 * (xp.pi ** 2) * (f0 ** 2) * (t - tau) ** 2) * xp.exp(
+            -(xp.pi ** 2) * (f0 ** 2) * (t - tau) ** 2
         )
 
     def step(self):
+        xp = self.xp
         c2 = (self.c * self.dt / self.dx) ** 2
         laplacian = (
-            np.roll(self.u_curr, 1, axis=0)
-            + np.roll(self.u_curr, -1, axis=0)
-            + np.roll(self.u_curr, 1, axis=1)
-            + np.roll(self.u_curr, -1, axis=1)
+            xp.roll(self.u_curr, 1, axis=0)
+            + xp.roll(self.u_curr, -1, axis=0)
+            + xp.roll(self.u_curr, 1, axis=1)
+            + xp.roll(self.u_curr, -1, axis=1)
             - 4 * self.u_curr
         )
         u_next = 2 * self.u_curr - self.u_prev + c2 * laplacian
 
-        amp = self.ricker_wavelet(self.time, self.f0)
+        amp = self.ricker_wavelet(self.time, self.f0, xp)
         sx, sy = self.source_pos
         u_next[sx, sy] += amp
 
@@ -88,24 +89,25 @@ class SWaveSimulation(WaveSimulation):
         self.initialize(amplitude=0.0, source_func=source_func)
 
     @staticmethod
-    def ricker_wavelet(t, f0):
+    def ricker_wavelet(t, f0, xp=np):
         tau = 1.0 / f0
-        return (1.0 - 2.0 * (np.pi ** 2) * (f0 ** 2) * (t - tau) ** 2) * np.exp(
-            -(np.pi ** 2) * (f0 ** 2) * (t - tau) ** 2
+        return (1.0 - 2.0 * (xp.pi ** 2) * (f0 ** 2) * (t - tau) ** 2) * xp.exp(
+            -(xp.pi ** 2) * (f0 ** 2) * (t - tau) ** 2
         )
 
     def step(self):
+        xp = self.xp
         c2 = (self.c * self.dt / self.dx) ** 2
         laplacian = (
-            np.roll(self.u_curr, 1, axis=0)
-            + np.roll(self.u_curr, -1, axis=0)
-            + np.roll(self.u_curr, 1, axis=1)
-            + np.roll(self.u_curr, -1, axis=1)
+            xp.roll(self.u_curr, 1, axis=0)
+            + xp.roll(self.u_curr, -1, axis=0)
+            + xp.roll(self.u_curr, 1, axis=1)
+            + xp.roll(self.u_curr, -1, axis=1)
             - 4 * self.u_curr
         )
         u_next = 2 * self.u_curr - self.u_prev + c2 * laplacian
 
-        amp = self.ricker_wavelet(self.time, self.f0)
+        amp = self.ricker_wavelet(self.time, self.f0, xp)
         sx, sy = self.source_pos
         u_next[sx, sy] += amp
 
