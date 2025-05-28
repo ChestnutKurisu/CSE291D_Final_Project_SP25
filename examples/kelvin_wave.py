@@ -1,59 +1,26 @@
-import numpy as np
+"""Rotating shallow water Kelvin wave using the unified solver."""
+
 import matplotlib.pyplot as plt
+import numpy as np
 
-# Kelvin Wave Solver (1-D along y with rotation)
-# ---------------------------------------------
-# Simple explicit finite difference scheme for the rotating shallow water
-# equations demonstrating a boundary trapped Kelvin wave.
+from wave_sim import KelvinWave
 
-Ly = 10.0
-Ny = 400
 
-dy = Ly / (Ny - 1)
+def eta0(y):
+    return np.exp(-((y - 2.5) / 0.5) ** 2)
 
-H = 1.0
-f = 1.0
-g = 9.81
 
-c = np.sqrt(g * H)
-Tmax = 10.0
-dt = 0.4 * dy / c
-nt = int(Tmax / dt)
+if __name__ == "__main__":
+    sim = KelvinWave(L=10.0, Ny=800, T=10.0)
+    sim.initial_conditions(eta0)
+    sol = sim.solve()
+    y = sim.y
+    plt.figure(figsize=(8, 4))
+    plt.plot(y, sol[-1], label="eta at final time")
+    plt.xlabel("y")
+    plt.ylabel("Surface perturbation")
+    plt.title("Kelvin Wave - Final Surface Perturbation")
+    plt.grid(True)
+    plt.legend()
+    plt.show()
 
-y = np.linspace(0, Ly, Ny)
-
-u = np.zeros(Ny)
-v = np.zeros(Ny)
-eta = np.exp(-((y - Ly / 4) / 0.5) ** 2)
-
-u_new = np.zeros_like(u)
-v_new = np.zeros_like(v)
-eta_new = np.zeros_like(eta)
-
-for _ in range(nt):
-    for j in range(1, Ny - 1):
-        du = -g * (eta[j + 1] - eta[j - 1]) / (2 * dy) + f * v[j]
-        dv = -f * u[j]
-        deta = -H * (u[j + 1] - u[j - 1]) / (2 * dy)
-        u_new[j] = u[j] + dt * du
-        v_new[j] = v[j] + dt * dv
-        eta_new[j] = eta[j] + dt * deta
-
-    u_new[0] = 0.0
-    v_new[0] = 0.0
-    eta_new[0] = eta[0]
-
-    u_new[-1] = u[-1]
-    v_new[-1] = v[-1]
-    eta_new[-1] = eta[-1]
-
-    u, v, eta = u_new.copy(), v_new.copy(), eta_new.copy()
-
-plt.figure(figsize=(8, 4))
-plt.plot(y, eta, label="eta at final time")
-plt.xlabel("y")
-plt.ylabel("Surface perturbation")
-plt.title("Kelvin Wave - Final Surface Perturbation")
-plt.grid(True)
-plt.legend()
-plt.show()

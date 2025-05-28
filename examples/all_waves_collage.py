@@ -79,9 +79,9 @@ def main():
     for wave_cls in wave_classes:
         name = wave_cls.__name__
         print(f"Running {name}...")
-        sim = wave_cls(grid_size=300, boundary="absorbing", source_func=gaussian_source)
+        sim = wave_cls(grid_size=512, boundary="absorbing", source_func=gaussian_source)
         outfile = os.path.join("output", name.lower())
-        files.append(run_and_save(sim, outfile, steps=150))
+        files.append(run_and_save(sim, outfile, steps=300))
 
     print("Generated files:")
     for path in files:

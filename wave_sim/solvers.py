@@ -407,6 +407,248 @@ class CapillaryWave:
         return np.array(snapshots)
 
 
+from typing import Optional
+
+
+class InternalGravityWave:
+    """Finite difference solver for a 1-D internal gravity wave."""
+
+    def __init__(self, N: float = 1.0, L: float = 2.0, Nx: int = 800, dt: Optional[float] = None, T: float = 1.0) -> None:
+        c = N
+        self.N = N
+        self.L = L
+        self.Nx = Nx
+        self.dx = L / Nx
+        if dt is None:
+            dt = 0.8 * self.dx / c
+        self.dt = dt
+        self.T = T
+        self.nt = int(T // dt)
+
+        self.x = np.linspace(0, L, Nx + 1)
+        self.psi_now = np.zeros(Nx + 1)
+        self.psi_prev = np.zeros(Nx + 1)
+        self.psi_next = np.zeros(Nx + 1)
+
+    def initial_conditions(self, psi_init_func, dpsi_init_func=None) -> None:
+        for i in range(self.Nx + 1):
+            self.psi_now[i] = psi_init_func(self.x[i])
+        if dpsi_init_func is not None:
+            for i in range(self.Nx + 1):
+                self.psi_prev[i] = self.psi_now[i] - self.dt * dpsi_init_func(self.x[i])
+        else:
+            self.psi_prev[:] = self.psi_now[:]
+
+    def step(self) -> None:
+        c2 = self.N ** 2
+        r = c2 * (self.dt ** 2 / self.dx ** 2)
+        for i in range(1, self.Nx):
+            self.psi_next[i] = (
+                2.0 * self.psi_now[i]
+                - self.psi_prev[i]
+                + r * (self.psi_now[i + 1] - 2.0 * self.psi_now[i] + self.psi_now[i - 1])
+            )
+        self.psi_next[0] = 0.0
+        self.psi_next[-1] = 0.0
+        self.psi_prev, self.psi_now, self.psi_next = self.psi_now, self.psi_next, self.psi_prev
+
+    def solve(self) -> np.ndarray:
+        sol = [self.psi_now.copy()]
+        for _ in range(self.nt):
+            self.step()
+            sol.append(self.psi_now.copy())
+        return np.array(sol)
+
+
+class KelvinWave:
+    """Finite difference Kelvin wave along a boundary using rotating shallow water."""
+
+    def __init__(self, L: float = 10.0, Ny: int = 800, H: float = 1.0, f: float = 1.0, g: float = 9.81, dt: Optional[float] = None, T: float = 10.0) -> None:
+        self.L = L
+        self.Ny = Ny
+        self.dy = L / (Ny - 1)
+        self.H = H
+        self.f = f
+        self.g = g
+        if dt is None:
+            c = np.sqrt(g * H)
+            dt = 0.4 * self.dy / c
+        self.dt = dt
+        self.T = T
+        self.nt = int(T // dt)
+
+        self.y = np.linspace(0, L, Ny)
+        self.u = np.zeros(Ny)
+        self.v = np.zeros(Ny)
+        self.eta = np.zeros(Ny)
+
+    def initial_conditions(self, eta_init_func) -> None:
+        self.eta = eta_init_func(self.y)
+
+    def step(self) -> None:
+        u_new = self.u.copy()
+        v_new = self.v.copy()
+        eta_new = self.eta.copy()
+        for j in range(1, self.Ny - 1):
+            du = -self.g * (self.eta[j + 1] - self.eta[j - 1]) / (2 * self.dy) + self.f * self.v[j]
+            dv = -self.f * self.u[j]
+            deta = -self.H * (self.u[j + 1] - self.u[j - 1]) / (2 * self.dy)
+            u_new[j] = self.u[j] + self.dt * du
+            v_new[j] = self.v[j] + self.dt * dv
+            eta_new[j] = self.eta[j] + self.dt * deta
+        u_new[0] = 0.0
+        v_new[0] = 0.0
+        eta_new[0] = self.eta[0]
+        u_new[-1] = self.u[-1]
+        v_new[-1] = self.v[-1]
+        eta_new[-1] = self.eta[-1]
+        self.u, self.v, self.eta = u_new, v_new, eta_new
+
+    def solve(self) -> np.ndarray:
+        snaps = [self.eta.copy()]
+        for _ in range(self.nt):
+            self.step()
+            snaps.append(self.eta.copy())
+        return np.array(snaps)
+
+
+class RossbyPlanetaryWave:
+    """Spectral solver for the linear barotropic vorticity equation."""
+
+    def __init__(self, Nx: int = 256, Ny: int = 256, Lx: float = 2 * np.pi, Ly: float = 2 * np.pi, beta: float = 1.0, dt: float = 0.01, T: float = 2.0) -> None:
+        self.Nx = Nx
+        self.Ny = Ny
+        self.Lx = Lx
+        self.Ly = Ly
+        self.dx = Lx / Nx
+        self.dy = Ly / Ny
+        self.beta = beta
+        self.dt = dt
+        self.T = T
+        self.nt = int(T // dt)
+
+        self.kx = np.fft.fftfreq(Nx, d=self.dx) * 2 * np.pi
+        self.ky = np.fft.fftfreq(Ny, d=self.dy) * 2 * np.pi
+        self.kx2D, self.ky2D = np.meshgrid(self.kx, self.ky, indexing="ij")
+        self.k2 = self.kx2D ** 2 + self.ky2D ** 2
+        self.k2[0, 0] = 1e-14
+
+        self.psi_hat = np.zeros((Nx, Ny), dtype=np.complex128)
+        self.zeta_hat = np.zeros((Nx, Ny), dtype=np.complex128)
+
+    def initial_conditions(self, psi_init_func) -> None:
+        x = np.linspace(0, self.Lx, self.Nx, endpoint=False)
+        y = np.linspace(0, self.Ly, self.Ny, endpoint=False)
+        X, Y = np.meshgrid(x, y, indexing="ij")
+        psi0 = psi_init_func(X, Y)
+        self.psi_hat = np.fft.fftn(psi0)
+        self.zeta_hat = -self.k2 * self.psi_hat
+
+    def step(self) -> None:
+        psi_x_hat = 1j * self.kx2D * self.psi_hat
+        self.zeta_hat = self.zeta_hat + self.dt * (-self.beta * psi_x_hat)
+        self.psi_hat = -self.zeta_hat / self.k2
+
+    def solve(self) -> np.ndarray:
+        x = np.linspace(0, self.Lx, self.Nx, endpoint=False)
+        y = np.linspace(0, self.Ly, self.Ny, endpoint=False)
+        X, Y = np.meshgrid(x, y, indexing="ij")
+        snaps = [np.fft.ifftn(self.psi_hat).real]
+        for _ in range(self.nt):
+            self.step()
+            snaps.append(np.fft.ifftn(self.psi_hat).real)
+        return np.array(snaps)
+
+
+class FlexuralBeamWave:
+    """Euler–Bernoulli beam equation w_tt + D w_xxxx = 0."""
+
+    def __init__(self, D: float = 0.01, L: float = 2.0, Nx: int = 801, dt: Optional[float] = None, T: float = 5.0) -> None:
+        self.D = D
+        self.L = L
+        self.Nx = Nx
+        self.x = np.linspace(0, L, Nx)
+        self.dx = self.x[1] - self.x[0]
+        if dt is None:
+            dt = 0.2 * self.dx ** 2 / np.sqrt(D)
+        self.dt = dt
+        self.T = T
+        self.nt = int(T // dt)
+
+        self.w_old = np.zeros(Nx)
+        self.w = np.zeros(Nx)
+        self.w_new = np.zeros(Nx)
+
+    def initial_conditions(self, w_init_func) -> None:
+        self.w = w_init_func(self.x)
+        self.w_old[:] = self.w
+
+    def step(self) -> None:
+        for i in range(2, self.Nx - 2):
+            w_xx = (self.w[i + 1] - 2 * self.w[i] + self.w[i - 1]) / self.dx ** 2
+            w_xx_plus = (self.w[i + 2] - 2 * self.w[i + 1] + self.w[i]) / self.dx ** 2
+            w_xx_minus = (self.w[i] - 2 * self.w[i - 1] + self.w[i - 2]) / self.dx ** 2
+            w_xxxx = (w_xx_plus - 2 * w_xx + w_xx_minus) / self.dx ** 2
+            self.w_new[i] = 2 * self.w[i] - self.w_old[i] - self.dt ** 2 * self.D * w_xxxx
+        self.w_new[0] = 0.0
+        self.w_new[1] = 0.0
+        self.w_new[-1] = 0.0
+        self.w_new[-2] = 0.0
+        self.w_old, self.w = self.w, self.w_new
+
+    def solve(self) -> np.ndarray:
+        snaps = [self.w.copy()]
+        for _ in range(self.nt):
+            self.step()
+            snaps.append(self.w.copy())
+        return np.array(snaps)
+
+
+class AlfvenWave:
+    """1-D Alfvén wave along a magnetic field."""
+
+    def __init__(self, B0: float = 1.0, rho: float = 1.0, mu0: float = 1.0, L: float = 2.0, Nx: int = 800, dt: Optional[float] = None, T: float = 2.0) -> None:
+        self.B0 = B0
+        self.rho = rho
+        self.mu0 = mu0
+        self.vA = B0 / np.sqrt(mu0 * rho)
+        self.L = L
+        self.Nx = Nx
+        self.x = np.linspace(0, L, Nx)
+        self.dx = self.x[1] - self.x[0]
+        if dt is None:
+            dt = 0.8 * self.dx / self.vA
+        self.dt = dt
+        self.T = T
+        self.nt = int(T // dt)
+
+        self.v_old = np.zeros(Nx)
+        self.v = np.zeros(Nx)
+        self.v_new = np.zeros(Nx)
+
+    def initial_conditions(self, v_init_func) -> None:
+        self.v_old = v_init_func(self.x)
+        self.v = self.v_old.copy()
+
+    def step(self) -> None:
+        for i in range(1, self.Nx - 1):
+            self.v_new[i] = (
+                2 * self.v[i]
+                - self.v_old[i]
+                + (self.vA * self.dt / self.dx) ** 2 * (self.v[i + 1] - 2 * self.v[i] + self.v[i - 1])
+            )
+        self.v_new[0] = 0.0
+        self.v_new[-1] = 0.0
+        self.v_old, self.v = self.v, self.v_new
+
+    def solve(self) -> np.ndarray:
+        snaps = [self.v.copy()]
+        for _ in range(self.nt):
+            self.step()
+            snaps.append(self.v.copy())
+        return np.array(snaps)
+
+
 __all__ = [
     "PWaveSimulation",
     "SWaveSimulation",
@@ -417,4 +659,9 @@ __all__ = [
     "DeepWaterGravityWave",
     "ShallowWaterGravityWave",
     "CapillaryWave",
+    "InternalGravityWave",
+    "KelvinWave",
+    "RossbyPlanetaryWave",
+    "FlexuralBeamWave",
+    "AlfvenWave",
 ]
