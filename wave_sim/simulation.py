@@ -4,15 +4,17 @@ from tqdm import tqdm
 
 try:
     import cupy as cp
+    print('CuPy is available, using GPU acceleration.')
     _GPU_AVAILABLE = True
 except Exception:  # cupy not installed or GPU unavailable
+    print('CuPy not available, using NumPy instead.')
     cp = np
     _GPU_AVAILABLE = False
 
 from .visualizer import WaveVisualizer
 
 
-def run_simulation(out_path="wave_2d.mp4", steps=19, use_gpu=False):
+def run_simulation(out_path="wave_2d.mp4", steps=199, use_gpu=True):
     """Run the wave simulation.
 
     Parameters
