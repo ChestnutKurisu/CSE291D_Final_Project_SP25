@@ -60,17 +60,20 @@ class ElasticWaveSimulation(WaveSimulation):
         u_next[sx, sy] += amp
 
         if self.boundary == "reflective":
-            u_next[0, :] = 0
-            u_next[-1, :] = 0
-            u_next[:, 0] = 0
-            u_next[:, -1] = 0
-        elif self.boundary == "periodic":
-            pass
-        elif self.boundary == "absorbing":
             u_next[0, :] = u_next[1, :]
             u_next[-1, :] = u_next[-2, :]
             u_next[:, 0] = u_next[:, 1]
             u_next[:, -1] = u_next[:, -2]
+        elif self.boundary == "periodic":
+            pass
+        elif self.boundary == "absorbing":
+            damp = 8
+            for i in range(damp):
+                factor = (damp - i) / damp
+                u_next[i, :] *= factor
+                u_next[-1 - i, :] *= factor
+                u_next[:, i] *= factor
+                u_next[:, -1 - i] *= factor
         else:
             raise ValueError(f"Unknown boundary condition {self.boundary}")
 

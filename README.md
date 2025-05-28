@@ -5,7 +5,9 @@ This repository contains a minimal framework for simulating and animating simple
 The repository now ships with implementations for **20** illustrative wave
 types collected in ``wave_sim.wave_catalog``.  These cover a mix of seismic,
 acoustic and fluid phenomena while all reusing the same underlying 2‑D solver
-for simplicity.
+for simplicity.  Surface and interface waves (Rayleigh, Love, Stoneley,
+Scholte, etc.) are provided only as minimal placeholders that reuse the scalar
+solver with preset speeds; they do not model full elastic boundary conditions.
 
 Legacy modules under ``wave_sim2d`` have been removed.  All animations now
 use the GPU optimised utilities found in ``wave_sim.high_quality`` which are
@@ -17,9 +19,9 @@ also able to fall back to NumPy when a CUDA device is not available.
 sources. The boundary condition can be selected when constructing a simulation
 via the `boundary` keyword with one of:
 
-* `"reflective"` – fixed edges (default)
+* `"reflective"` – zero normal derivative at the edges (mirror boundary)
 * `"periodic"` – domain repeats at the edges
-* `"absorbing"` – simple absorbing boundary
+* `"absorbing"` – damped sponge layer near the borders
 
 The initial disturbance can be provided through `initialize(source_func=...)`
 where `source_func` is a function of coordinate arrays ``(X, Y)``. For example,

@@ -1,9 +1,12 @@
 """Subset of wave simulations.
 
-This module defines minimal :class:`~wave_sim.base.WaveSimulation` subclasses
-for a curated list of wave types spanning seismic, acoustic and fluid
-phenomena.  Each class simply sets a default wave speed ``c`` and initialises
-the field with a unit impulse in the centre of the grid.
+The classes here are **simple demonstration wrappers** around
+:class:`~wave_sim.base.WaveSimulation`.  They merely choose convenient default
+wave speeds and initialise the field with a unit impulse.  The specialised
+surface/interface wave names (Rayleigh, Love, Stoneley, Scholte, etc.) do not
+implement the full elastic or multi-layer physics that would be required for
+realistic models.  They should therefore be viewed as *placeholders* useful for
+illustrative animations only.
 """
 
 import numpy as np
@@ -67,7 +70,12 @@ class SVWave(SVWaveSimulation):
 ###############################################################################
 
 class RayleighWave(WaveSimulation):
-    """Rayleigh surface wave."""
+    """Placeholder Rayleigh surface wave.
+
+    The real Rayleigh wave involves coupled traction-free elastic equations.
+    This simplified version merely solves a single scalar wave equation with a
+    default wave speed.
+    """
 
     def __init__(self, **kwargs):
         kwargs.setdefault("c", 0.53)
@@ -76,7 +84,11 @@ class RayleighWave(WaveSimulation):
 
 
 class LoveWave(WaveSimulation):
-    """Love surface wave."""
+    """Placeholder Love surface wave.
+
+    As with :class:`RayleighWave`, this is a minimal scalar solver and does not
+    implement layered shear wave physics.
+    """
 
     def __init__(self, **kwargs):
         kwargs.setdefault("c", 0.50)
@@ -85,7 +97,7 @@ class LoveWave(WaveSimulation):
 
 
 class LambS0Mode(WaveSimulation):
-    """Lamb S0 (symmetric) mode."""
+    """Placeholder Lamb S0 (symmetric) mode."""
 
     def __init__(self, **kwargs):
         kwargs.setdefault("c", 0.65)
@@ -94,7 +106,7 @@ class LambS0Mode(WaveSimulation):
 
 
 class LambA0Mode(WaveSimulation):
-    """Lamb A0 (antisymmetric) mode."""
+    """Placeholder Lamb A0 (antisymmetric) mode."""
 
     def __init__(self, **kwargs):
         kwargs.setdefault("c", 0.60)
@@ -103,7 +115,7 @@ class LambA0Mode(WaveSimulation):
 
 
 class StoneleyWave(WaveSimulation):
-    """Stoneley solid-solid interface wave."""
+    """Placeholder Stoneley solid-solid interface wave."""
 
     def __init__(self, **kwargs):
         kwargs.setdefault("c", 0.45)
@@ -112,7 +124,7 @@ class StoneleyWave(WaveSimulation):
 
 
 class ScholteWave(WaveSimulation):
-    """Scholte solid-fluid interface wave."""
+    """Placeholder Scholte solid-fluid interface wave."""
 
     def __init__(self, **kwargs):
         kwargs.setdefault("c", 0.40)

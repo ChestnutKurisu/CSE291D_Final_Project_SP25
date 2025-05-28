@@ -26,7 +26,7 @@ class WaveSimulator2D:
     """GPU accelerated 2-D wave equation solver."""
 
     def __init__(self, width, height, scene_objects=None, initial_field=None,
-                 backend="gpu"):
+                 backend="gpu", boundary="reflective"):
         if backend == "gpu" and cp is not None:
             self.xp = cp
         else:
@@ -34,6 +34,7 @@ class WaveSimulator2D:
         xp = self.xp
 
         self.global_dampening = 1.0
+        self.boundary = boundary
         self.c = xp.ones((height, width), dtype=xp.float32)
         self.d = xp.ones((height, width), dtype=xp.float32)
         self.u = xp.zeros((height, width), dtype=xp.float32)
@@ -56,14 +57,32 @@ class WaveSimulator2D:
 
     def update_field(self):
         xp = self.xp
-        if xp is cp:
-            laplacian = cp.asarray(cupyx.scipy.signal.convolve2d(self.u, self.laplacian_kernel,
-                                                                mode="same", boundary="fill"))
+        if self.boundary == "periodic":
+            bmode = "wrap"
+        elif self.boundary == "reflective":
+            bmode = "symm"
         else:
-            laplacian = scipy.signal.convolve2d(self.u, self.laplacian_kernel,
-                                                mode="same", boundary="fill")
+            bmode = "fill"
+        if xp is cp:
+            laplacian = cp.asarray(
+                cupyx.scipy.signal.convolve2d(
+                    self.u, self.laplacian_kernel, mode="same", boundary=bmode
+                )
+            )
+        else:
+            laplacian = scipy.signal.convolve2d(
+                self.u, self.laplacian_kernel, mode="same", boundary=bmode
+            )
         v = (self.u - self.u_prev) * self.d * self.global_dampening
         r = self.u + v + laplacian * (self.c * self.dt) ** 2
+        if self.boundary == "absorbing":
+            damp = 8
+            for i in range(damp):
+                factor = (damp - i) / damp
+                r[i, :] *= factor
+                r[-1 - i, :] *= factor
+                r[:, i] *= factor
+                r[:, -1 - i] *= factor
         self.u_prev[:] = self.u
         self.u[:] = r
         self.t += self.dt
