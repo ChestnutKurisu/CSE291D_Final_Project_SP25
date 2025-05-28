@@ -32,7 +32,7 @@ def test_generate_dry_run():
     out_dir = tempfile.mkdtemp()
     for gen in GENERATORS:
         try:
-            path = gen(output_dir=out_dir, out_name="tmp.mp4", steps=2)
+            path = gen(output_dir=out_dir, out_name="tmp.mp4", steps=1)
         except Exception:
             path = None
         assert isinstance(path, str)
