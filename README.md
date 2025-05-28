@@ -52,6 +52,11 @@ one into an ``output`` directory.  The script now also assembles these movies
 into a single collage video.  GPU acceleration via ``cupy`` is used by default
 for smoother, high-resolution output when available.
 
+An additional script ``examples/high_quality_collage.py`` leverages the
+``wave_sim.high_quality`` module to produce GPU-accelerated animations with a
+more advanced visual style.  It writes an MP4 for each wave type and also
+generates a collage video automatically.
+
 
 Additional standalone scripts in the ``examples`` directory demonstrate simple
 1‑D or spectral solvers for several textbook waves:

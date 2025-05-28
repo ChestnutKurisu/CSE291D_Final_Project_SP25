@@ -1,0 +1,28 @@
+import os
+import imageio.v2 as imageio
+import numpy as np
+import cv2
+
+from .simulator import WaveSimulator2D
+from .visualizer import WaveVisualizer, get_colormap_lut
+
+
+def simulate_wave(scene_builder, out_path, steps=2000, sim_steps_per_frame=8,
+                  resolution=(512, 512), fps=60, backend="gpu"):
+    """Run a high quality simulation and save to MP4."""
+    objects, w, h = scene_builder(resolution)
+    sim = WaveSimulator2D(w, h, objects, backend=backend)
+    vis = WaveVisualizer(
+        field_colormap=get_colormap_lut("wave1"),
+        intensity_colormap=get_colormap_lut("afmhot"),
+    )
+    writer = imageio.get_writer(out_path, fps=fps)
+    for i in range(steps):
+        sim.update_scene()
+        sim.update_field()
+        vis.update(sim)
+        if i % sim_steps_per_frame == 0:
+            frame = vis.render_field(1.0)
+            writer.append_data(frame)
+    writer.close()
+    return out_path
