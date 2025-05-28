@@ -9,6 +9,13 @@ the field with a unit impulse in the centre of the grid.
 from .base import WaveSimulation
 from .p_wave import PWaveSimulation
 from .s_wave import SWaveSimulation, SHWaveSimulation, SVWaveSimulation
+from .basic_wave_solvers import (
+    PlaneAcousticWave,
+    SphericalAcousticWave,
+    DeepWaterGravityWave,
+    ShallowWaterGravityWave,
+    CapillaryWave,
+)
 
 
 ###############################################################################
@@ -109,54 +116,9 @@ class ScholteWave(WaveSimulation):
 # ACOUSTIC WAVES IN FLUIDS
 ###############################################################################
 
-class PlaneAcousticWave(WaveSimulation):
-    """Plane acoustic wave."""
-
-    def __init__(self, **kwargs):
-        kwargs.setdefault("c", 0.9)
-        super().__init__(**kwargs)
-        self.initialize(amplitude=1.0)
-
-
-class SphericalAcousticWave(WaveSimulation):
-    """Spherical acoustic wave."""
-
-    def __init__(self, **kwargs):
-        kwargs.setdefault("c", 0.9)
-        super().__init__(**kwargs)
-        self.initialize(amplitude=1.0)
-
-
 ###############################################################################
 # FLUID SURFACE AND INTERNAL WAVES
 ###############################################################################
-
-class DeepWaterGravityWave(WaveSimulation):
-    """Deep-water gravity wave."""
-
-    def __init__(self, **kwargs):
-        kwargs.setdefault("c", 0.5)
-        super().__init__(**kwargs)
-        self.initialize(amplitude=1.0)
-
-
-class ShallowWaterGravityWave(WaveSimulation):
-    """Shallow-water gravity wave."""
-
-    def __init__(self, **kwargs):
-        kwargs.setdefault("c", 0.4)
-        super().__init__(**kwargs)
-        self.initialize(amplitude=1.0)
-
-
-class CapillaryWave(WaveSimulation):
-    """Capillary surface wave."""
-
-    def __init__(self, **kwargs):
-        kwargs.setdefault("c", 0.3)
-        super().__init__(**kwargs)
-        self.initialize(amplitude=1.0)
-
 
 class InternalGravityWave(WaveSimulation):
     """Internal gravity wave."""
