@@ -62,6 +62,13 @@ Example: run a P-wave simulation for 100 steps
 python main.py --wave_type P --steps 100 --output p_wave.mp4
 ```
 
+### Elastic potentials demo
+
+The module `wave_sim.elastic_waves` now includes a helper function
+`simulate_elastic_potentials` that evolves coupled P- and S-wave potentials and
+returns the corresponding displacement fields. This routine illustrates a more
+complete elastic formulation where both wave modes propagate simultaneously.
+
 ## Output Files
 
 The program writes the MP4 animation specified by `--output`.  A log file containing ring‑average metrics is also generated in the `logs/` directory with a timestamped name such as `simulation_acoustic_YYYYMMDD_HHMMSS.log`.
