@@ -13,11 +13,34 @@ def run_simulation(
         steps=40,
         ring_radius=0.15,
         log_interval=5,
+        wave_type="acoustic",
+        c_acoustic=1.0,
+        vp=2.0,
+        vs=1.0,
 ):
     L = 2.0
     dx = 0.01
-    c = 1.0
-    dt = 0.707 * dx / c
+
+    if wave_type == "acoustic":
+        sim_wave_speed = c_acoustic
+        field_description = "Acoustic Amplitude"
+    elif wave_type == "P":
+        sim_wave_speed = vp
+        field_description = "P-wave Potential (\u03A6)"
+    elif wave_type == "S_SH":
+        sim_wave_speed = vs
+        field_description = "SH-wave Displacement (u_z)"
+    elif wave_type == "S_SV_potential":
+        sim_wave_speed = vs
+        field_description = "SV-wave Potential (\u03A8_z)"
+    else:
+        raise ValueError(f"Unknown wave_type: {wave_type}")
+
+    if sim_wave_speed <= 0:
+        raise ValueError(f"Wave speed must be positive. Got {sim_wave_speed} for {wave_type}.")
+
+    cfl_factor = 0.7
+    dt = cfl_factor * dx / sim_wave_speed
     nsteps = steps
 
     x = np.arange(0, L + dx, dx)
@@ -29,10 +52,13 @@ def run_simulation(
     xc, w = L / 2, 0.05
     f[:, :, 0] = np.exp(-((xx - xc) ** 2 + (yy - xc) ** 2) / w ** 2)
 
-    f[1:-1, 1:-1, 1] = f[1:-1, 1:-1, 0] + 0.5 * c ** 2 * (
+    S_sq = (sim_wave_speed * dt / dx) ** 2
+
+    laplacian_f0 = (
         (f[:-2, 1:-1, 0] + f[2:, 1:-1, 0] - 2 * f[1:-1, 1:-1, 0]) +
         (f[1:-1, :-2, 0] + f[1:-1, 2:, 0] - 2 * f[1:-1, 1:-1, 0])
-    ) * (dt / dx) ** 2
+    )
+    f[1:-1, 1:-1, 1] = f[1:-1, 1:-1, 0] + 0.5 * S_sq * laplacian_f0
 
     viz = WaveVisualizer(
         sim_shape=f.shape[:2],
@@ -42,7 +68,8 @@ def run_simulation(
         main_plot_cmap_name="Spectral",
         dynamic_z=False,
         zlim=(-0.25, 1.0),
-        font_size=16
+        font_size=16,
+        field_name_label=field_description,
     )
 
     dist = np.sqrt((xx - xc) ** 2 + (yy - xc) ** 2)
@@ -50,7 +77,11 @@ def run_simulation(
     ring_mask = np.abs(dist - ring_radius) <= ring_thick / 2
 
     velocity_hist, amp_hist = [], []
-    prev_amp = f[:, :, 1][ring_mask].mean()
+    if np.any(ring_mask):
+        prev_amp = f[:, :, 1][ring_mask].mean()
+    else:
+        prev_amp = 0.0
+        logging.warning("Ring mask is empty. Ring-average metrics will be zero.")
 
     # ── logging setup ─────────────────────────────────────────────────
     logs_dir = os.path.join(os.getcwd(), "logs")
@@ -65,32 +96,48 @@ def run_simulation(
         format="%(asctime)s %(message)s",
     )
     logging.info(
-        "Simulation start: steps=%d, ring_radius=%.3f, log_interval=%d",
+        "Simulation start: wave_type=%s, field_description='%s', speed=%.3f m/s, steps=%d, "
+        "ring_radius=%.3f m, log_interval=%d, dt=%.3e s, dx=%.3e m, S_sq=%.3f",
+        wave_type,
+        field_description,
+        sim_wave_speed,
         steps,
         ring_radius,
         log_interval,
+        dt,
+        dx,
+        S_sq,
     )
 
     writer = animation.FFMpegWriter(fps=30, bitrate=8000)
     with writer.saving(viz.fig, out_path, dpi=100):
-        for k in tqdm(range(nsteps), desc="Simulating"):
-            f[1:-1, 1:-1, 2] = -f[1:-1, 1:-1, 0] + 2 * f[1:-1, 1:-1, 1] + c ** 2 * (
+        for k in tqdm(range(nsteps), desc=f"Simulating {wave_type} ({field_description})"):
+            laplacian_f1 = (
                 (f[:-2, 1:-1, 1] + f[2:, 1:-1, 1] - 2 * f[1:-1, 1:-1, 1]) +
                 (f[1:-1, :-2, 1] + f[1:-1, 2:, 1] - 2 * f[1:-1, 1:-1, 1])
-            ) * (dt / dx) ** 2
+            )
+            f[1:-1, 1:-1, 2] = (
+                -f[1:-1, 1:-1, 0]
+                + 2 * f[1:-1, 1:-1, 1]
+                + S_sq * laplacian_f1
+            )
             f[:, :, 0], f[:, :, 1] = f[:, :, 1], f[:, :, 2]
 
-            amp = f[:, :, 1][ring_mask].mean()
-            vel = (amp - prev_amp) / dt
+            if np.any(ring_mask):
+                amp = f[:, :, 1][ring_mask].mean()
+                vel = (amp - prev_amp) / dt if dt > 0 else 0.0
+            else:
+                amp = 0.0
+                vel = 0.0
             prev_amp = amp
-            energy = float(np.sum(f[:, :, 1] ** 2))
+            energy = float(np.sum(f[:, :, 1] ** 2 * dx * dx))
             tnow = k * dt
             velocity_hist.append((tnow, vel))
             amp_hist.append(amp)
 
             if k % log_interval == 0:
                 logging.info(
-                    "step=%d t=%.3f amp=%.6f vel=%.6f energy=%.6f",
+                    "step=%d t=%.3f s, ring_avg_field=%.6f, ring_avg_field_rate=%.6f, total_energy_proxy=%.6f",
                     k,
                     tnow,
                     amp,

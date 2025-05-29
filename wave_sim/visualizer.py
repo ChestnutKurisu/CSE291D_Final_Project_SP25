@@ -22,7 +22,8 @@ class WaveVisualizer:
                  brightness_scale=1.0,
                  dynamic_z=True,
                  zlim=(-0.25, 1.0),
-                 font_size=14):
+                 font_size=14,
+                 field_name_label="Amplitude"):
         # ── layout basics ───────────────────────────────────────────────
         plt.rcParams.update({'font.size': font_size})
         self.label_fs, self.title_fs = font_size, font_size + 2
@@ -30,9 +31,10 @@ class WaveVisualizer:
 
         self.sim_shape = sim_shape
         self.dt, self.dx = dt, dx
-        self.dynamic_z = bool(dynamic_z) and (zlim is None)
-        self.zlim = zlim
+        self.dynamic_z = bool(dynamic_z)
+        self.zlim_user = zlim
         self.cmap_name = main_plot_cmap_name
+        self.field_name_label = field_name_label
 
         w, h = output_video_size
         self.fig = plt.figure(figsize=(w / 100, h / 100), dpi=100)
@@ -63,18 +65,18 @@ class WaveVisualizer:
         # labels + aspect for main 3-D plot
         self.ax_main.set_xlabel("X (m)", fontsize=self.label_fs, labelpad=10)
         self.ax_main.set_ylabel("Y (m)", fontsize=self.label_fs, labelpad=10)
-        self.ax_main.set_zlabel("Amplitude", fontsize=self.label_fs, labelpad=10)
+        self.ax_main.set_zlabel(self.field_name_label, fontsize=self.label_fs, labelpad=10)
         self.ax_main.set_box_aspect((np.ptp(x), np.ptp(y), 0.6 * max(np.ptp(x), np.ptp(y))))
-        if not self.dynamic_z and self.zlim:
-            self.ax_main.set_zlim(*self.zlim)
+        if not self.dynamic_z and self.zlim_user:
+            self.ax_main.set_zlim(*self.zlim_user)
 
         # lines for the 2-D graphs
-        self.vel_line,  = self.ax_velocity.plot([], [], '-b', label='Velocity')
+        self.vel_line,  = self.ax_velocity.plot([], [], '-b', label='Field Rate')
         self.spec_line, = self.ax_spectrum.plot([], [], '-r', label='Magnitude')
         self.ax_velocity.set_xlabel("Time (s)",     fontsize=self.label_fs)
-        self.ax_velocity.set_ylabel("Velocity",      fontsize=self.label_fs)
+        self.ax_velocity.set_ylabel(f"Ring-Avg {self.field_name_label} Rate", fontsize=self.label_fs)
         self.ax_spectrum.set_xlabel("Frequency (Hz)", fontsize=self.label_fs)
-        self.ax_spectrum.set_ylabel("Magnitude",      fontsize=self.label_fs)
+        self.ax_spectrum.set_ylabel(f"Ring-Avg {self.field_name_label} Mag.", fontsize=self.label_fs)
         self.ax_velocity.legend(fontsize=self.tick_fs)
         self.ax_spectrum.legend(fontsize=self.tick_fs)
 
@@ -122,13 +124,24 @@ class WaveVisualizer:
         self.ax_main.cla()
         self.ax_main.set_xlabel("X (m)", fontsize=self.label_fs, labelpad=10)
         self.ax_main.set_ylabel("Y (m)", fontsize=self.label_fs, labelpad=10)
-        self.ax_main.set_zlabel("Amplitude", fontsize=self.label_fs, labelpad=10)
+        self.ax_main.set_zlabel(self.field_name_label, fontsize=self.label_fs, labelpad=10)
 
+        current_zlim = None
         if self.dynamic_z:
-            zlim = 1.05 * np.percentile(np.abs(fld), 99)
-            self.ax_main.set_zlim(-zlim, zlim)
-        elif self.zlim:
-            self.ax_main.set_zlim(*self.zlim)
+            min_val, max_val = np.min(fld), np.max(fld)
+            if min_val == max_val:
+                min_val -= 0.1
+                max_val += 0.1
+            current_zlim = (min_val, max_val)
+            self.ax_main.set_zlim(*current_zlim)
+        elif self.zlim_user:
+            current_zlim = self.zlim_user
+            self.ax_main.set_zlim(*current_zlim)
+        else:
+            current_zlim = (np.min(fld), np.max(fld)) if np.any(fld) else (-1, 1)
+            if current_zlim[0] == current_zlim[1]:
+                current_zlim = (current_zlim[0] - 0.1, current_zlim[1] + 0.1)
+            self.ax_main.set_zlim(*current_zlim)
 
         ds = self._surf_stride
         self.ax_main.plot_surface(
@@ -147,27 +160,25 @@ class WaveVisualizer:
             xs = self.cx + self.monitor_ring_radius * np.cos(θ)
             ys = self.cy + self.monitor_ring_radius * np.sin(θ)
 
-            z_top, z_bot = self.ax_main.get_zlim()
-            z0 = z_top - 0.2 * (z_top - z_bot)  # 2 % above the highest point
+            z_plot_val = current_zlim[1] - 0.02 * (current_zlim[1] - current_zlim[0])
 
             # depthshade removed — keep zorder & clip_on to ensure visibility
             self.ax_main.plot(
-                xs, ys, z0, ':', color='red', linewidth=2,
+                xs, ys, z_plot_val, ':', color='red', linewidth=2,
                 zorder=100, clip_on=False
             )
 
-            # legend (unchanged)
             surf_proxy = plt.Rectangle((0, 0), 1, 1, fc=cm.get_cmap(self.cmap_name)(0.7),
                                        ec='none', alpha=0.9)
             ring_proxy = plt.Line2D([0], [0], linestyle=':', color='red', linewidth=2)
             self.ax_main.legend([surf_proxy, ring_proxy],
-                                ['Wave amplitude', 'Monitor ring'],
+                                [f'{self.field_name_label}', 'Monitor ring'],
                                 bbox_to_anchor=(-0.10, 1.00),
                                 loc='upper left',
                                 borderaxespad=0.0,
                                 fontsize=self.tick_fs)
 
-        self.ax_main.set_title(f"Wave Field (t={self.current_time:.2f} s)",
+        self.ax_main.set_title(f"{self.field_name_label} (t={self.current_time:.2f} s)",
                                fontsize=self.title_fs)
 
         # ── COLOUR-BAR – now on the far-left column ──────────────────
@@ -177,11 +188,12 @@ class WaveVisualizer:
                 cm.ScalarMappable(norm=norm, cmap=self.cmap_name),
                 cax=self.cbar_ax
             )
-            self.cbar_ax.set_ylabel("Amplitude", fontsize=self.label_fs)
+            self.cbar_ax.set_ylabel(self.field_name_label, fontsize=self.label_fs)
             self.cbar_ax.tick_params(labelsize=self.tick_fs)
         else:
             self.cbar.mappable.set_norm(norm)
-            self.cbar.update_normal(self.cbar.mappable)
+            self.cbar.mappable.set_array([])
+            self.cbar.mappable.set_clim(fld.min(), fld.max())
 
         # ── VELOCITY (ring-average) ──────────────────────────────────
         if self.velocity_history:
@@ -190,7 +202,7 @@ class WaveVisualizer:
             self.ax_velocity.relim(); self.ax_velocity.autoscale_view()
 
         self.ax_velocity.set_title(
-            f"Ring-avg velocity  (r={self.monitor_ring_radius:.2f} m)",
+            f"Ring-Avg {self.field_name_label} Rate (r={self.monitor_ring_radius:.2f} m)",
             fontsize=self.title_fs
         )
 
@@ -203,9 +215,10 @@ class WaveVisualizer:
             self.ax_spectrum.relim(); self.ax_spectrum.autoscale_view()
 
         self.ax_spectrum.set_title(
-            f"Spectrum  (ring-avg, t={self.current_time:.2f} s)",
+            f"Spectrum ({self.field_name_label}, t={self.current_time:.2f} s)",
             fontsize=self.title_fs
         )
+        self.ax_spectrum.set_ylabel(f"Magnitude ({self.field_name_label})", fontsize=self.label_fs)
 
         # ── final cosmetic tweaks ────────────────────────────────────
         for ax in (self.ax_main, self.ax_velocity, self.ax_spectrum):
