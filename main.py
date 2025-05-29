@@ -4,7 +4,7 @@ import argparse
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run the wave simulation")
-    parser.add_argument("--steps", type=int, default=19, help="Number of simulation steps")
+    parser.add_argument("--steps", type=int, default=40, help="Number of simulation steps")
     parser.add_argument("--output", default="wave_2d.mp4", help="Output video path")
     args = parser.parse_args()
 

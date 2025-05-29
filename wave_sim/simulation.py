@@ -5,7 +5,7 @@ from tqdm import tqdm
 from .visualizer import WaveVisualizer
 
 
-def run_simulation(out_path="wave_2d.mp4", steps=19):
+def run_simulation(out_path="wave_2d.mp4", steps=40):
     # physical / numerical parameters
     L = 2.0  # enlarged domain
     dx = 0.01

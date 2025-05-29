@@ -130,8 +130,7 @@ class WaveVisualizer:
             # draw the ring slightly above the surface for visibility
             peak = field.max()
             zs = np.full_like(xs, peak * 1.1)
-            self.ax_main.plot(xs, ys, zs, linestyle=':', linewidth=3,
-                              color='red')
+            self.ax_main.plot(xs, ys, zs, linestyle=':', linewidth=3, color='red')
         self.ax_main.set_title(f"Wave Field (Slice) at t={self.current_sim_time:.2f}s", fontsize=self.title_fs)
 
         # update colorbar indicating the mapping of colors to amplitude.  The
