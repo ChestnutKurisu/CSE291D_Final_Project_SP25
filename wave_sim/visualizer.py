@@ -4,6 +4,7 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib import cm
 from matplotlib.gridspec import GridSpec
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 
 class WaveVisualizer:
@@ -72,6 +73,17 @@ class WaveVisualizer:
 
         self.fig.tight_layout(pad=1.0)
 
+        # add a persistent colorbar axis in the main plot
+        self.cbar_ax = inset_axes(
+            self.ax_main,
+            width="3%", height="25%",
+            loc="upper left",
+            bbox_to_anchor=(0.02, 0.98, 1, 1),
+            bbox_transform=self.ax_main.transAxes,
+            borderpad=0.0,
+        )
+        self.cbar = None
+
         self.field_slice_to_visualize = None
         self.velocity_history = []
         self.amplitude_history_for_fft = []
@@ -95,9 +107,12 @@ class WaveVisualizer:
         elif self.zlim is not None:
             self.ax_main.set_zlim(*self.zlim)
 
-        self.ax_main.plot_surface(self.X, self.Y, field,
-                                  cmap=cm.get_cmap(self.cmap_name),
-                                  rstride=4, cstride=4, alpha=0.9)
+        norm = plt.Normalize(vmin=field.min(), vmax=field.max())
+        self.ax_main.plot_surface(
+            self.X, self.Y, field,
+            cmap=cm.get_cmap(self.cmap_name),
+            rstride=4, cstride=4, alpha=0.9, norm=norm
+        )
         self.ax_main.plot_wireframe(self.X, self.Y, field,
                                     rstride=10, cstride=10,
                                     color="grey", linewidth=0.4, alpha=0.5)
@@ -110,6 +125,15 @@ class WaveVisualizer:
             self.ax_main.plot(xs, ys, zs, linestyle=':', linewidth=3,
                               color='red')
         self.ax_main.set_title(f"Wave Field (Slice) at t={self.current_sim_time:.2f}s", fontsize=self.title_fs)
+
+        # update colorbar indicating the mapping of colors to amplitude
+        mappable = cm.ScalarMappable(norm=norm, cmap=cm.get_cmap(self.cmap_name))
+        if self.cbar is None:
+            self.cbar = self.fig.colorbar(mappable, cax=self.cbar_ax)
+            self.cbar.ax.set_ylabel("Amplitude", fontsize=self.label_fs)
+            self.cbar.ax.tick_params(labelsize=self.tick_fs)
+        else:
+            self.cbar.update_normal(mappable)
 
         if self.velocity_history:
             t_arr, v_arr = zip(*self.velocity_history)
