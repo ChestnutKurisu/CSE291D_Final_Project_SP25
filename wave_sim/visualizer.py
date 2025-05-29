@@ -169,7 +169,7 @@ class WaveVisualizer:
             xs = self.cx + self.monitor_ring_radius * np.cos(theta)
             ys = self.cy + self.monitor_ring_radius * np.sin(theta)
 
-            z_plot_val = current_zlim[1] - 0.02 * (current_zlim[1] - current_zlim[0])
+            z_plot_val = current_zlim[1] - 0.75 * (current_zlim[1] - current_zlim[0])
 
             # depthshade removed — keep zorder & clip_on to ensure visibility
             self.ax_main.plot(
