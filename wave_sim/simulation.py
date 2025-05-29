@@ -41,7 +41,10 @@ def run_simulation(out_path="wave_2d.mp4", steps=19):
     center_idx = npts // 2
     velocity_history = []
     amplitude_history = []
-    prev_amp = f[center_idx, center_idx, 1]
+
+    dist = np.sqrt((xx - xc) ** 2 + (yy - xc) ** 2)
+    ring_thickness = 3 * dx
+    prev_amp = f[:, :, 1][dist <= ring_thickness / 2].mean()
 
     writer = animation.FFMpegWriter(fps=30, bitrate=8000)
 
@@ -54,13 +57,16 @@ def run_simulation(out_path="wave_2d.mp4", steps=19):
 
             f[:, :, 0], f[:, :, 1] = f[:, :, 1], f[:, :, 2]
 
-            amp = f[center_idx, center_idx, 1]
+            radius = c * k * dt
+            ring_mask = np.abs(dist - radius) <= ring_thickness / 2
+            amp = f[:, :, 1][ring_mask].mean()
             vel = (amp - prev_amp) / dt
             prev_amp = amp
             velocity_history.append((k * dt, vel))
             amplitude_history.append(amp)
 
-            vis.update(f[:, :, 1], velocity_history, amplitude_history, k * dt)
+            vis.update(f[:, :, 1], velocity_history, amplitude_history, k * dt,
+                       monitor_ring=radius)
             vis.render_composite_frame()
             writer.grab_frame()
 
