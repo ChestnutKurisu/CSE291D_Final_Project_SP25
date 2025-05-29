@@ -49,6 +49,7 @@ class WaveVisualizer:
         x = np.arange(nx) * dx
         y = np.arange(ny) * dx
         self.X, self.Y = np.meshgrid(x, y)
+        self.center_coord = (nx // 2) * dx
 
         self.ax_main.set_xlabel("X (m)", fontsize=self.label_fs)
         self.ax_main.set_ylabel("Y (m)", fontsize=self.label_fs)
@@ -75,12 +76,14 @@ class WaveVisualizer:
         self.velocity_history = []
         self.amplitude_history_for_fft = []
         self.current_sim_time = 0.0
+        self.monitor_ring_radius = None
 
-    def update(self, field_slice, velocity_history, amplitude_history, current_time):
+    def update(self, field_slice, velocity_history, amplitude_history, current_time, monitor_ring=None):
         self.field_slice_to_visualize = field_slice
         self.velocity_history = velocity_history
         self.amplitude_history_for_fft = amplitude_history
         self.current_sim_time = current_time
+        self.monitor_ring_radius = monitor_ring
 
     def render_composite_frame(self):
         field = self.field_slice_to_visualize
@@ -98,6 +101,14 @@ class WaveVisualizer:
         self.ax_main.plot_wireframe(self.X, self.Y, field,
                                     rstride=10, cstride=10,
                                     color="grey", linewidth=0.4, alpha=0.5)
+
+        if self.monitor_ring_radius is not None:
+            theta = np.linspace(0, 2 * np.pi, 200)
+            xs = self.center_coord + self.monitor_ring_radius * np.cos(theta)
+            ys = self.center_coord + self.monitor_ring_radius * np.sin(theta)
+            zs = np.zeros_like(xs)
+            self.ax_main.plot(xs, ys, zs, linestyle=':', linewidth=3,
+                              color='red')
         self.ax_main.set_title(f"Wave Field (Slice) at t={self.current_sim_time:.2f}s", fontsize=self.title_fs)
 
         if self.velocity_history:
