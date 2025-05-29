@@ -165,9 +165,9 @@ class WaveVisualizer:
 
         # draw the monitoring ring on top of the surface
         if self.monitor_ring_radius and self.monitor_ring_radius > 0:
-            θ = np.linspace(0, 2 * np.pi, 240)
-            xs = self.cx + self.monitor_ring_radius * np.cos(θ)
-            ys = self.cy + self.monitor_ring_radius * np.sin(θ)
+            theta = np.linspace(0, 2 * np.pi, 240)
+            xs = self.cx + self.monitor_ring_radius * np.cos(theta)
+            ys = self.cy + self.monitor_ring_radius * np.sin(theta)
 
             z_plot_val = current_zlim[1] - 0.02 * (current_zlim[1] - current_zlim[0])
 
