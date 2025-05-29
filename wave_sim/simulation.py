@@ -1,3 +1,7 @@
+import os
+import logging
+from datetime import datetime
+
 import numpy as np
 from matplotlib import animation
 from tqdm import tqdm
@@ -8,6 +12,7 @@ def run_simulation(
         out_path="wave_2d.mp4",
         steps=40,
         ring_radius=0.15,
+        log_interval=5,
 ):
     L = 2.0
     dx = 0.01
@@ -47,6 +52,25 @@ def run_simulation(
     velocity_hist, amp_hist = [], []
     prev_amp = f[:, :, 1][ring_mask].mean()
 
+    # ── logging setup ─────────────────────────────────────────────────
+    logs_dir = os.path.join(os.getcwd(), "logs")
+    os.makedirs(logs_dir, exist_ok=True)
+    log_path = os.path.join(
+        logs_dir,
+        f"simulation_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
+    )
+    logging.basicConfig(
+        filename=log_path,
+        level=logging.INFO,
+        format="%(asctime)s %(message)s",
+    )
+    logging.info(
+        "Simulation start: steps=%d, ring_radius=%.3f, log_interval=%d",
+        steps,
+        ring_radius,
+        log_interval,
+    )
+
     writer = animation.FFMpegWriter(fps=30, bitrate=8000)
     with writer.saving(viz.fig, out_path, dpi=100):
         for k in tqdm(range(nsteps), desc="Simulating"):
@@ -59,12 +83,25 @@ def run_simulation(
             amp = f[:, :, 1][ring_mask].mean()
             vel = (amp - prev_amp) / dt
             prev_amp = amp
+            energy = float(np.sum(f[:, :, 1] ** 2))
             tnow = k * dt
             velocity_hist.append((tnow, vel))
             amp_hist.append(amp)
 
+            if k % log_interval == 0:
+                logging.info(
+                    "step=%d t=%.3f amp=%.6f vel=%.6f energy=%.6f",
+                    k,
+                    tnow,
+                    amp,
+                    vel,
+                    energy,
+                )
+
             viz.update(f[:, :, 1], velocity_hist, amp_hist, tnow, monitor_ring=ring_radius)
             viz.render_composite_frame()
             writer.grab_frame()
+
+    logging.info("Simulation completed. Output saved to %s", out_path)
 
     return out_path
