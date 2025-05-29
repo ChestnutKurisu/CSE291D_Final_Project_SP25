@@ -29,7 +29,7 @@ def run_simulation(
         field_description = r"P-wave Potential ($\Phi$)"
     elif wave_type == "S_SH":
         sim_wave_speed = vs
-        field_description = r"SH-wave Displacement ($u_z$)"
+        field_description = r"SH-wave Disp. ($u_z$)"
     elif wave_type == "S_SV_potential":
         sim_wave_speed = vs
         field_description = r"SV-wave Potential ($\Psi_z$)"
