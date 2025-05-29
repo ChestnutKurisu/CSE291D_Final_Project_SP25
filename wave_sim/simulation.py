@@ -12,7 +12,7 @@ def run_simulation(
         out_path="wave_2d.mp4",
         steps=40,
         ring_radius=0.15,
-        log_interval=5,
+        log_interval=1,
         wave_type="acoustic",
         c_acoustic=1.0,
         vp=2.0,
@@ -88,8 +88,10 @@ def run_simulation(
     os.makedirs(logs_dir, exist_ok=True)
     log_path = os.path.join(
         logs_dir,
-        f"simulation_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
+        f"simulation_{wave_type}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
     )
+    for handler in logging.root.handlers[:]:
+        logging.root.removeHandler(handler)
     logging.basicConfig(
         filename=log_path,
         level=logging.INFO,
@@ -121,7 +123,8 @@ def run_simulation(
                 + 2 * f[1:-1, 1:-1, 1]
                 + S_sq * laplacian_f1
             )
-            f[:, :, 0], f[:, :, 1] = f[:, :, 1], f[:, :, 2]
+            f[:, :, 0] = f[:, :, 1].copy()
+            f[:, :, 1] = f[:, :, 2].copy()
 
             if np.any(ring_mask):
                 amp = f[:, :, 1][ring_mask].mean()
