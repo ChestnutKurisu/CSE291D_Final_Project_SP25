@@ -74,14 +74,10 @@ class WaveVisualizer:
         self.fig.tight_layout(pad=1.0)
 
         # add a persistent colorbar axis in the main plot
-        self.cbar_ax = inset_axes(
-            self.ax_main,
-            width="3%", height="25%",
-            loc="upper left",
-            bbox_to_anchor=(0.02, 0.98, 1, 1),
-            bbox_transform=self.ax_main.transAxes,
-            borderpad=0.0,
-        )
+        # allocate a placeholder for the colorbar axis. It will be recreated
+        # every frame because calling ``clear`` on ``ax_main`` removes any
+        # inset axes.
+        self.cbar_ax = None
         self.cbar = None
 
         self.field_slice_to_visualize = None
@@ -117,23 +113,36 @@ class WaveVisualizer:
                                     rstride=10, cstride=10,
                                     color="grey", linewidth=0.4, alpha=0.5)
 
+        # recreate the colorbar axis that was removed by ax_main.clear()
+        self.cbar_ax = inset_axes(
+            self.ax_main,
+            width="3%", height="25%",
+            loc="upper left",
+            bbox_to_anchor=(0.02, 0.98, 1, 1),
+            bbox_transform=self.ax_main.transAxes,
+            borderpad=0.0,
+        )
+
         if self.monitor_ring_radius is not None:
             theta = np.linspace(0, 2 * np.pi, 200)
             xs = self.center_coord + self.monitor_ring_radius * np.cos(theta)
             ys = self.center_coord + self.monitor_ring_radius * np.sin(theta)
-            zs = np.zeros_like(xs)
+            # draw the ring slightly above the surface for visibility
+            peak = field.max()
+            zs = np.full_like(xs, peak * 1.1)
             self.ax_main.plot(xs, ys, zs, linestyle=':', linewidth=3,
                               color='red')
         self.ax_main.set_title(f"Wave Field (Slice) at t={self.current_sim_time:.2f}s", fontsize=self.title_fs)
 
-        # update colorbar indicating the mapping of colors to amplitude
+        # update colorbar indicating the mapping of colors to amplitude.  The
+        # colorbar axis is recreated every frame so we always draw a new
+        # colorbar as well.
         mappable = cm.ScalarMappable(norm=norm, cmap=cm.get_cmap(self.cmap_name))
-        if self.cbar is None:
-            self.cbar = self.fig.colorbar(mappable, cax=self.cbar_ax)
-            self.cbar.ax.set_ylabel("Amplitude", fontsize=self.label_fs)
-            self.cbar.ax.tick_params(labelsize=self.tick_fs)
-        else:
-            self.cbar.update_normal(mappable)
+        if self.cbar is not None:
+            self.cbar.remove()
+        self.cbar = self.fig.colorbar(mappable, cax=self.cbar_ax)
+        self.cbar.ax.set_ylabel("Amplitude", fontsize=self.label_fs)
+        self.cbar.ax.tick_params(labelsize=self.tick_fs)
 
         if self.velocity_history:
             t_arr, v_arr = zip(*self.velocity_history)
