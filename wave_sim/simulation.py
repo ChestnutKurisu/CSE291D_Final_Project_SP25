@@ -6,6 +6,7 @@ import numpy as np
 from matplotlib import animation
 from tqdm import tqdm
 from .visualizer import WaveVisualizer
+from .vector_elastic import simulate_elastic_wave
 
 
 def run_simulation(
@@ -17,6 +18,10 @@ def run_simulation(
         c_acoustic=1.0,
         vp=2.0,
         vs=1.0,
+        rho=1.0,
+        lame_lambda=1.0,
+        lame_mu=1.0,
+        f0=25.0,
 ):
     L = 2.0
     dx = 0.01
@@ -33,6 +38,9 @@ def run_simulation(
     elif wave_type == "S_SV_potential":
         sim_wave_speed = vs
         field_description = r"SV-wave Potential ($\Psi_z$)"
+    elif wave_type == "elastic":
+        sim_wave_speed = max(vp, vs)
+        field_description = "Displacement Magnitude"
     else:
         raise ValueError(f"Unknown wave_type: {wave_type}")
 
@@ -40,7 +48,12 @@ def run_simulation(
         raise ValueError(f"Wave speed must be positive. Got {sim_wave_speed} for {wave_type}.")
 
     cfl_factor = 0.7
-    dt = cfl_factor * dx / sim_wave_speed
+    if wave_type == "elastic":
+        dt = cfl_factor * dx / (np.sqrt(2.0) * sim_wave_speed)
+        if np.sqrt(2.0) * sim_wave_speed * dt / dx >= 1.0:
+            raise ValueError("Unstable dt for elastic case")
+    else:
+        dt = cfl_factor * dx / sim_wave_speed
     nsteps = steps
 
     x = np.arange(0, L + dx, dx)
@@ -48,6 +61,62 @@ def run_simulation(
     xx, yy = np.meshgrid(x, y)
 
     npts = len(x)
+
+    if wave_type == "elastic":
+        logs_dir = os.path.join(os.getcwd(), "logs")
+        os.makedirs(logs_dir, exist_ok=True)
+        log_path = os.path.join(
+            logs_dir,
+            f"simulation_{wave_type}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
+        )
+        for h in logging.root.handlers[:]:
+            logging.root.removeHandler(h)
+        logging.basicConfig(filename=log_path, level=logging.INFO, format="%(asctime)s %(message)s")
+        field_snaps, velocity_hist, amp_hist, dt = simulate_elastic_wave(
+            steps=steps,
+            dx=dx,
+            L=L,
+            vp=vp,
+            vs=vs,
+            rho=rho,
+            lame_lambda=lame_lambda,
+            lame_mu=lame_mu,
+            dt=dt,
+            f0=f0,
+            ring_radius=ring_radius,
+        )
+        viz = WaveVisualizer(
+            sim_shape=field_snaps[0].shape,
+            output_video_size=(1920, 1080),
+            dt=dt,
+            dx=dx,
+            main_plot_cmap_name="Spectral",
+            dynamic_z=False,
+            zlim=(-0.25, 1.0),
+            font_size=16,
+            field_name_label=field_description,
+        )
+        writer = animation.FFMpegWriter(fps=30, bitrate=8000)
+        with writer.saving(viz.fig, out_path, dpi=100):
+            for k, field in enumerate(field_snaps):
+                tnow = k * dt
+                vel = velocity_hist[k][1]
+                amp = amp_hist[k]
+                if k % log_interval == 0:
+                    logging.info(
+                        "step=%d t=%.3f ring_avg=%.6f ring_rate=%.6f energy=%.6f",
+                        k,
+                        tnow,
+                        amp,
+                        vel,
+                        float(np.sum(field ** 2 * dx * dx)),
+                    )
+                viz.update(field, velocity_hist[: k + 1], amp_hist[: k + 1], tnow, monitor_ring=ring_radius)
+                viz.render_composite_frame()
+                writer.grab_frame()
+        logging.info("Simulation completed. Output saved to %s", out_path)
+        return out_path
+
     f = np.zeros((npts, npts, 3))
     xc, w = L / 2, 0.05
     f[:, :, 0] = np.exp(-((xx - xc) ** 2 + (yy - xc) ** 2) / w ** 2)

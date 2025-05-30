@@ -13,7 +13,7 @@ if __name__ == "__main__":
         "--wave_type",
         type=str,
         default="acoustic",
-        choices=["acoustic", "P", "S_SH", "S_SV_potential"],
+        choices=["acoustic", "P", "S_SH", "S_SV_potential", "elastic"],
         help=(
             "Type of wave to simulate: 'acoustic', 'P' for P-wave potential, "
             "'S_SH' for shear horizontal displacement, or 'S_SV_potential' "
@@ -32,6 +32,10 @@ if __name__ == "__main__":
         "--vs", type=float, default=1.0,
         help="S-wave velocity when simulating S-waves"
     )
+    parser.add_argument("--rho", type=float, default=1.0)
+    parser.add_argument("--lambda_lame", type=float, default=1.0)
+    parser.add_argument("--mu_lame", type=float, default=1.0)
+    parser.add_argument("--f0", type=float, default=25.0)
 
     args = parser.parse_args()
 
@@ -41,6 +45,10 @@ if __name__ == "__main__":
         log_interval=args.log_interval,
         wave_type=args.wave_type,
         c_acoustic=args.c_acoustic,
+        rho=args.rho,
+        lame_lambda=args.lambda_lame,
+        lame_mu=args.mu_lame,
+        f0=args.f0,
         vp=args.vp,
         vs=args.vs,
     )

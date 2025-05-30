@@ -1,6 +1,6 @@
 # 2-D Wave Simulation
 
-This project contains a small Python implementation of a 2‑D wave equation solver.  The code evolves a wave field in time and writes an MP4 movie showing the amplitude.
+This project contains a Python implementation of 2‑D wave solvers for acoustic and elastic waves.  The program writes an MP4 movie and logs diagnostic data.
 
 ## Governing Equation
 
@@ -50,10 +50,14 @@ python main.py --steps 60 --output wave_2d.mp4
 --steps        Number of time steps to simulate (default: 20)
 --output       Output MP4 path (default: wave_2d.mp4)
 --log_interval How often to log diagnostics (default: every step)
---wave_type    acoustic | P | S_SH | S_SV_potential
+--wave_type    acoustic | P | S_SH | S_SV_potential | elastic
 --c_acoustic   Wave speed for acoustic run
 --vp           P-wave velocity
 --vs           S-wave velocity
+--rho          Density for elastic solver
+--lambda_lame  Lamé lambda
+--mu_lame      Lamé mu
+--f0           Source peak frequency
 ```
 
 Example: run a P-wave simulation for 100 steps
@@ -62,12 +66,13 @@ Example: run a P-wave simulation for 100 steps
 python main.py --wave_type P --steps 100 --output p_wave.mp4
 ```
 
-### Elastic potentials demo
+### Elastic wave options
 
-The module `wave_sim.elastic_waves` now includes a helper function
-`simulate_elastic_potentials` that evolves coupled P- and S-wave potentials and
-returns the corresponding displacement fields. This routine illustrates a more
-complete elastic formulation where both wave modes propagate simultaneously.
+The `elastic` wave type invokes a vector displacement solver based on
+velocity–stress updates. A Ricker source is injected each step at the domain
+centre. The module also exposes `simulate_elastic_potentials` for a potential
+formulation and `solve_incremental_elastic` for solving a static incremental
+elastic step with a conjugate–gradient solver.
 
 ## Output Files
 
