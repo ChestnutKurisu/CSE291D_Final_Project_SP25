@@ -60,6 +60,7 @@ python main.py --steps 60 --output wave_2d.mp4
 --f0           Source peak frequency
 --absorb_width Damping layer width (cells)
 --absorb_strength Damping strength coefficient
+--elastic_source P | S | both    Source type for elastic solver
 ```
 
 Example: run a P-wave simulation for 100 steps
@@ -79,6 +80,8 @@ conjugate–gradient solver. Scalar wave modes use the same Ricker time function
 at the centre by default.
 All dynamic solvers support a simple absorbing boundary implemented as an
 exponential damping layer controlled by `--absorb_width` and `--absorb_strength`.
+The `--elastic_source` option selects whether the elastic solver injects a pure
+P source, a pure S source, or both.
 
 ## Output Files
 

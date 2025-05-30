@@ -26,6 +26,7 @@ def simulate_elastic_wave(
     ring_radius: float = 0.15,
     absorb_width: int = 10,
     absorb_strength: float = 2.0,
+    source: str = "P",
 ):
     npts = int(L / dx) + 1
     x = np.arange(npts) * dx
@@ -80,8 +81,11 @@ def simulate_elastic_wave(
         sxy *= damping
 
         src_val = ricker_wavelet(it * dt, f0)
-        sxx[src_i, src_j] += src_val
-        syy[src_i, src_j] += src_val
+        if source in ("P", "both"):
+            sxx[src_i, src_j] += src_val
+            syy[src_i, src_j] += src_val
+        if source in ("S", "both"):
+            sxy[src_i, src_j] += src_val
 
         dsxx_dx = (sxx[2:, 1:-1] - sxx[:-2, 1:-1]) / (2 * dx)
         dsxy_dy = (sxy[1:-1, 2:] - sxy[1:-1, :-2]) / (2 * dx)

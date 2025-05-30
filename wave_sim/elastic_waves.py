@@ -225,33 +225,24 @@ def simulate_elastic_potentials(
     vs2_dt2 = (vs * dt) ** 2
 
     for it in range(nt):
-        # update phi potential
-        for i in range(1, nx - 1):
-            for j in range(1, nz - 1):
-                lap_phi = (
-                    (phi_now[i + 1, j] - 2.0 * phi_now[i, j] + phi_now[i - 1, j]) / dx ** 2
-                    + (
-                        phi_now[i, j + 1]
-                        - 2.0 * phi_now[i, j]
-                        + phi_now[i, j - 1]
-                    )
-                    / dz ** 2
-                )
-                phi_next[i, j] = 2.0 * phi_now[i, j] - phi_prev[i, j] + vp2_dt2 * lap_phi
+        lap_phi = (
+            phi_now[2:, 1:-1] + phi_now[:-2, 1:-1] - 2.0 * phi_now[1:-1, 1:-1]
+        ) / dx ** 2 + (
+            phi_now[1:-1, 2:] + phi_now[1:-1, :-2] - 2.0 * phi_now[1:-1, 1:-1]
+        ) / dz ** 2
+        lap_psi = (
+            psi_now[2:, 1:-1] + psi_now[:-2, 1:-1] - 2.0 * psi_now[1:-1, 1:-1]
+        ) / dx ** 2 + (
+            psi_now[1:-1, 2:] + psi_now[1:-1, :-2] - 2.0 * psi_now[1:-1, 1:-1]
+        ) / dz ** 2
 
-        # update psi potential
-        for i in range(1, nx - 1):
-            for j in range(1, nz - 1):
-                lap_psi = (
-                    (psi_now[i + 1, j] - 2.0 * psi_now[i, j] + psi_now[i - 1, j]) / dx ** 2
-                    + (
-                        psi_now[i, j + 1]
-                        - 2.0 * psi_now[i, j]
-                        + psi_now[i, j - 1]
-                    )
-                    / dz ** 2
-                )
-                psi_next[i, j] = 2.0 * psi_now[i, j] - psi_prev[i, j] + vs2_dt2 * lap_psi
+        phi_next[1:-1, 1:-1] = (
+            2.0 * phi_now[1:-1, 1:-1] - phi_prev[1:-1, 1:-1] + vp2_dt2 * lap_phi
+        )
+
+        psi_next[1:-1, 1:-1] = (
+            2.0 * psi_now[1:-1, 1:-1] - psi_prev[1:-1, 1:-1] + vs2_dt2 * lap_psi
+        )
 
         src_val = ricker_wavelet(it * dt, f0)
         if source in ("P", "both"):

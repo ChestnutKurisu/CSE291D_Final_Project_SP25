@@ -25,6 +25,7 @@ def run_simulation(
         f0=25.0,
         absorb_width=10,
         absorb_strength=2.0,
+        elastic_source="P",
 ):
     L = 2.0
     dx = 0.01
@@ -100,6 +101,7 @@ def run_simulation(
             ring_radius=ring_radius,
             absorb_width=absorb_width,
             absorb_strength=absorb_strength,
+            source=elastic_source,
         )
         viz = WaveVisualizer(
             sim_shape=field_snaps[0].shape,
@@ -153,7 +155,7 @@ def run_simulation(
             dt=dt,
             nt=steps,
             f0=f0,
-            source="both",
+            source=elastic_source,
             absorb_width=absorb_width,
             absorb_strength=absorb_strength,
         )
