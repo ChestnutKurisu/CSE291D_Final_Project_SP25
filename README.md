@@ -58,6 +58,8 @@ python main.py --steps 60 --output wave_2d.mp4
 --lambda_lame  Lamé lambda
 --mu_lame      Lamé mu
 --f0           Source peak frequency
+--absorb_width Damping layer width (cells)
+--absorb_strength Damping strength coefficient
 ```
 
 Example: run a P-wave simulation for 100 steps
@@ -75,6 +77,8 @@ formulation producing P– and S–wave displacements. The module also exposes
 `solve_incremental_elastic` for solving a static incremental step with a
 conjugate–gradient solver. Scalar wave modes use the same Ricker time function
 at the centre by default.
+All dynamic solvers support a simple absorbing boundary implemented as an
+exponential damping layer controlled by `--absorb_width` and `--absorb_strength`.
 
 ## Output Files
 
