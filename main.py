@@ -37,6 +37,8 @@ if __name__ == "__main__":
     parser.add_argument("--lambda_lame", type=float, default=1.0)
     parser.add_argument("--mu_lame", type=float, default=1.0)
     parser.add_argument("--f0", type=float, default=25.0)
+    parser.add_argument("--absorb_width", type=int, default=10)
+    parser.add_argument("--absorb_strength", type=float, default=2.0)
 
     args = parser.parse_args()
 
@@ -50,6 +52,8 @@ if __name__ == "__main__":
         lame_lambda=args.lambda_lame,
         lame_mu=args.mu_lame,
         f0=args.f0,
+        absorb_width=args.absorb_width,
+        absorb_strength=args.absorb_strength,
         vp=args.vp,
         vs=args.vs,
     )

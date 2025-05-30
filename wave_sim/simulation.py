@@ -23,6 +23,8 @@ def run_simulation(
         lame_lambda=1.0,
         lame_mu=1.0,
         f0=25.0,
+        absorb_width=10,
+        absorb_strength=2.0,
 ):
     L = 2.0
     dx = 0.01
@@ -66,6 +68,14 @@ def run_simulation(
 
     npts = len(x)
 
+    damping = np.ones((npts, npts))
+    for i in range(absorb_width):
+        coef = np.exp(-absorb_strength * ((absorb_width - i) / absorb_width) ** 2)
+        damping[i, :] *= coef
+        damping[-i - 1, :] *= coef
+        damping[:, i] *= coef
+        damping[:, -i - 1] *= coef
+
     if wave_type == "elastic":
         logs_dir = os.path.join(os.getcwd(), "logs")
         os.makedirs(logs_dir, exist_ok=True)
@@ -88,6 +98,8 @@ def run_simulation(
             dt=dt,
             f0=f0,
             ring_radius=ring_radius,
+            absorb_width=absorb_width,
+            absorb_strength=absorb_strength,
         )
         viz = WaveVisualizer(
             sim_shape=field_snaps[0].shape,
@@ -142,6 +154,8 @@ def run_simulation(
             nt=steps,
             f0=f0,
             source="both",
+            absorb_width=absorb_width,
+            absorb_strength=absorb_strength,
         )
         field_snaps = [np.sqrt(u_x**2 + u_z**2) for (u_x, u_z) in snaps]
         final_field = np.sqrt(ux**2 + uz**2)
@@ -268,6 +282,7 @@ def run_simulation(
                 + 2 * f[1:-1, 1:-1, 1]
                 + S_sq * laplacian_f1
             )
+            f[:, :, 2] *= damping
             f[src_i, src_j, 2] += ricker_wavelet(k * dt, f0)
             f[:, :, 0] = f[:, :, 1].copy()
             f[:, :, 1] = f[:, :, 2].copy()

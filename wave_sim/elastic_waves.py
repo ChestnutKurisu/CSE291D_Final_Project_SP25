@@ -155,6 +155,8 @@ def simulate_elastic_potentials(
     nt: int = 750,
     f0: float = 15.0,
     source: str = "P",
+    absorb_width: int = 10,
+    absorb_strength: float = 2.0,
 ):
     """Simulate 2-D elastic wave propagation via scalar potentials.
 
@@ -205,6 +207,14 @@ def simulate_elastic_potentials(
     psi_prev = np.zeros_like(psi_now)
     psi_next = np.zeros_like(psi_now)
 
+    damping = np.ones((nx, nz))
+    for i in range(absorb_width):
+        coef = np.exp(-absorb_strength * ((absorb_width - i) / absorb_width) ** 2)
+        damping[i, :] *= coef
+        damping[-i - 1, :] *= coef
+        damping[:, i] *= coef
+        damping[:, -i - 1] *= coef
+
     ux = np.zeros((nx, nz), dtype=float)
     uz = np.zeros((nx, nz), dtype=float)
 
@@ -248,6 +258,9 @@ def simulate_elastic_potentials(
             phi_next[sx, sz] += src_val
         if source in ("S", "both"):
             psi_next[sx, sz] += src_val
+
+        phi_next *= damping
+        psi_next *= damping
 
         phi_prev, phi_now, phi_next = phi_now, phi_next, phi_prev
         psi_prev, psi_now, psi_next = psi_now, psi_next, psi_prev
