@@ -13,11 +13,12 @@ if __name__ == "__main__":
         "--wave_type",
         type=str,
         default="acoustic",
-        choices=["acoustic", "P", "S_SH", "S_SV_potential", "elastic"],
+        choices=["acoustic", "P", "S_SH", "S_SV_potential", "elastic", "elastic_potentials"],
         help=(
             "Type of wave to simulate: 'acoustic', 'P' for P-wave potential, "
-            "'S_SH' for shear horizontal displacement, or 'S_SV_potential' "
-            "for shear vertical wave potential."
+            "'S_SH' for shear horizontal displacement, 'S_SV_potential' for "
+            "shear vertical wave potential, 'elastic' for a vector elastic "
+            "solver, or 'elastic_potentials' for the coupled potential form."
         ),
     )
     parser.add_argument(

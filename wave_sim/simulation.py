@@ -7,6 +7,7 @@ from matplotlib import animation
 from tqdm import tqdm
 from .visualizer import WaveVisualizer
 from .vector_elastic import simulate_elastic_wave
+from .elastic_waves import simulate_elastic_potentials, ricker_wavelet
 
 
 def run_simulation(
@@ -41,6 +42,9 @@ def run_simulation(
     elif wave_type == "elastic":
         sim_wave_speed = max(vp, vs)
         field_description = "Displacement Magnitude"
+    elif wave_type == "elastic_potentials":
+        sim_wave_speed = max(vp, vs)
+        field_description = "Displacement Magnitude"
     else:
         raise ValueError(f"Unknown wave_type: {wave_type}")
 
@@ -48,7 +52,7 @@ def run_simulation(
         raise ValueError(f"Wave speed must be positive. Got {sim_wave_speed} for {wave_type}.")
 
     cfl_factor = 0.7
-    if wave_type == "elastic":
+    if wave_type in ("elastic", "elastic_potentials"):
         dt = cfl_factor * dx / (np.sqrt(2.0) * sim_wave_speed)
         if np.sqrt(2.0) * sim_wave_speed * dt / dx >= 1.0:
             raise ValueError("Unstable dt for elastic case")
@@ -117,9 +121,81 @@ def run_simulation(
         logging.info("Simulation completed. Output saved to %s", out_path)
         return out_path
 
+    if wave_type == "elastic_potentials":
+        logs_dir = os.path.join(os.getcwd(), "logs")
+        os.makedirs(logs_dir, exist_ok=True)
+        log_path = os.path.join(
+            logs_dir,
+            f"simulation_{wave_type}_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
+        )
+        for h in logging.root.handlers[:]:
+            logging.root.removeHandler(h)
+        logging.basicConfig(filename=log_path, level=logging.INFO, format="%(asctime)s %(message)s")
+        (ux, uz), snaps = simulate_elastic_potentials(
+            nx=npts,
+            nz=npts,
+            dx=dx,
+            dz=dx,
+            vp=vp,
+            vs=vs,
+            dt=dt,
+            nt=steps,
+            f0=f0,
+            source="both",
+        )
+        field_snaps = [np.sqrt(u_x**2 + u_z**2) for (u_x, u_z) in snaps]
+        final_field = np.sqrt(ux**2 + uz**2)
+        field_snaps.append(final_field)
+        velocity_hist = []
+        amp_hist = []
+        prev_amp = 0.0
+        ring_thick = 3 * dx
+        dist = np.sqrt((xx - L/2)**2 + (yy - L/2)**2)
+        ring_mask = np.abs(dist - ring_radius) <= ring_thick/2
+        viz = WaveVisualizer(
+            sim_shape=field_snaps[0].shape,
+            output_video_size=(1920, 1080),
+            dt=dt,
+            dx=dx,
+            main_plot_cmap_name="Spectral",
+            dynamic_z=False,
+            zlim=(-0.25, 1.0),
+            font_size=16,
+            field_name_label=field_description,
+        )
+        writer = animation.FFMpegWriter(fps=30, bitrate=8000)
+        with writer.saving(viz.fig, out_path, dpi=100):
+            for k, field in enumerate(field_snaps):
+                tnow = k * dt
+                if np.any(ring_mask):
+                    amp = field[ring_mask].mean()
+                    vel = (amp - prev_amp)/dt
+                else:
+                    amp = 0.0
+                    vel = 0.0
+                prev_amp = amp
+                velocity_hist.append((tnow, vel))
+                amp_hist.append(amp)
+                if k % log_interval == 0:
+                    logging.info(
+                        "step=%d t=%.3f ring_avg=%.6f ring_rate=%.6f energy=%.6f",
+                        k,
+                        tnow,
+                        amp,
+                        vel,
+                        float(np.sum(field**2 * dx * dx)),
+                    )
+                viz.update(field, velocity_hist, amp_hist, tnow, monitor_ring=ring_radius)
+                viz.render_composite_frame()
+                writer.grab_frame()
+        logging.info("Simulation completed. Output saved to %s", out_path)
+        return out_path
+
     f = np.zeros((npts, npts, 3))
     xc, w = L / 2, 0.05
     f[:, :, 0] = np.exp(-((xx - xc) ** 2 + (yy - xc) ** 2) / w ** 2)
+    src_i = npts // 2
+    src_j = npts // 2
 
     S_sq = (sim_wave_speed * dt / dx) ** 2
 
@@ -192,6 +268,7 @@ def run_simulation(
                 + 2 * f[1:-1, 1:-1, 1]
                 + S_sq * laplacian_f1
             )
+            f[src_i, src_j, 2] += ricker_wavelet(k * dt, f0)
             f[:, :, 0] = f[:, :, 1].copy()
             f[:, :, 1] = f[:, :, 2].copy()
 

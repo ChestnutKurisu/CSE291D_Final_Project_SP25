@@ -50,7 +50,7 @@ python main.py --steps 60 --output wave_2d.mp4
 --steps        Number of time steps to simulate (default: 20)
 --output       Output MP4 path (default: wave_2d.mp4)
 --log_interval How often to log diagnostics (default: every step)
---wave_type    acoustic | P | S_SH | S_SV_potential | elastic
+--wave_type    acoustic | P | S_SH | S_SV_potential | elastic | elastic_potentials
 --c_acoustic   Wave speed for acoustic run
 --vp           P-wave velocity
 --vs           S-wave velocity
@@ -69,10 +69,12 @@ python main.py --wave_type P --steps 100 --output p_wave.mp4
 ### Elastic wave options
 
 The `elastic` wave type invokes a vector displacement solver based on
-velocity–stress updates. A Ricker source is injected each step at the domain
-centre. The module also exposes `simulate_elastic_potentials` for a potential
-formulation and `solve_incremental_elastic` for solving a static incremental
-elastic step with a conjugate–gradient solver.
+velocity–stress updates with a Ricker source injected each step at the domain
+centre. The alternative `elastic_potentials` type runs a coupled potential
+formulation producing P– and S–wave displacements. The module also exposes
+`solve_incremental_elastic` for solving a static incremental step with a
+conjugate–gradient solver. Scalar wave modes use the same Ricker time function
+at the centre by default.
 
 ## Output Files
 
