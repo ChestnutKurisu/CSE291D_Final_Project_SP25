@@ -39,6 +39,7 @@ if __name__ == "__main__":
     parser.add_argument("--f0", type=float, default=25.0)
     parser.add_argument("--absorb_width", type=int, default=10)
     parser.add_argument("--absorb_strength", type=float, default=2.0)
+    parser.add_argument("--elastic_source", type=str, default="P", choices=["P", "S", "both"])
 
     args = parser.parse_args()
 
@@ -54,6 +55,7 @@ if __name__ == "__main__":
         f0=args.f0,
         absorb_width=args.absorb_width,
         absorb_strength=args.absorb_strength,
+        elastic_source=args.elastic_source,
         vp=args.vp,
         vs=args.vs,
     )
