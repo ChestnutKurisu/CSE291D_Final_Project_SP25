@@ -3,19 +3,19 @@
 **Author:** Param Somane
 
 ## Table of Contents
-1.  [Overview](#overview)
-2.  [Features](#features)
-3.  [System Model](#system-model)
-4.  [Numerical Implementation](#numerical-implementation)
-5.  [Dependencies](#dependencies)
-6.  [Directory Structure](#directory-structure)
-7.  [How to Run](#how-to-run)
-    *   [Main Simulation](#main-simulation)
-    *   [Generating Report Figures](#generating-report-figures)
-8.  [Simulation Parameters](#simulation-parameters)
-9.  [Output](#output)
-10. [Example Animations](#example-animations)
-11. [Key Figures for Report](#key-figures-for-report)
+1.  [Overview](#overview)  
+2.  [Example Animations](#example-animations)  
+3.  [Features](#features)  
+4.  [System Model](#system-model)  
+5.  [Numerical Implementation](#numerical-implementation)  
+6.  [Dependencies](#dependencies)  
+7.  [Directory Structure](#directory-structure)  
+8.  [How to Run](#how-to-run)  
+    *   [Main Simulation](#main-simulation)  
+    *   [Generating Report Figures](#generating-report-figures)  
+9.  [Simulation Parameters](#simulation-parameters)  
+10. [Output](#output)  
+11. [Key Figures for Report](#key-figures-for-report)  
 12. [Acknowledgments](#acknowledgments)
 
 ## Overview
@@ -32,41 +32,111 @@ The simulation's behavior is highly configurable through command-line arguments.
 
 This project fulfills the requirements for a continuum mechanical simulation, specifically focusing on a 2D fluid dynamics problem.
 
+## Example Animations
+
+The following animations demonstrate the simulation capabilities. They were generated with settings similar to those found in the `animation/original/` directory, typically involving a moderate number of vortices ($N_v=20$) and a large number of tracers ($N_t \approx 1.3 \times 10^6$).
+
+1.  **Scalar Plume Advection (using `plume` colormap and glow effects):**
+    This video shows tracers initialized with a scalar value based on their initial positions, advected by the vortices. It uses the custom 'plume' colormap and glow effects for enhanced visuals.
+    [Watch Video: Scalar Plume](https://github.com/user-attachments/assets/03d3e51f-e83b-40c6-88af-02c2e2ff9d8f)
+    <br>(If the video doesn't embed below, please use the link above to view.)
+    <video src="https://github.com/user-attachments/assets/03d3e51f-e83b-40c6-88af-02c2e2ff9d8f" controls width="720"></video>
+
+2.  **Grouped Tracer Advection (using `jet` colormap):**
+    This video shows tracers initialized in several distinct groups, each with a different color. It illustrates how different regions of fluid are stretched and mixed by the vortex flow.
+    [Watch Video: Grouped Tracers](https://github.com/user-attachments/assets/1cbf5575-aa51-412e-8bba-9535f1c960b8)
+    <br>(If the video doesn't embed below, please use the link above to view.)
+    <video src="https://github.com/user-attachments/assets/1cbf5575-aa51-412e-8bba-9535f1c960b8" controls width="720"></video>
+
+*(Note: The original example videos `animation/original/pv_scalar_plume_1.3M.mp4` and `animation/original/pv_group_1.3M.mp4` serve as references for the kind of output this simulation can produce.)*
+
 ## Features
 
-*   **2D Point Vortex Dynamics:** Simulates the interaction of multiple point vortices.
-*   **Lamb-Oseen Regularization:** Uses the Lamb-Oseen model for vortex cores to avoid singularities and allow for more realistic close-range interactions. Separate core sizes for vortex-vortex ($\corevsq$) and vortex-tracer ($\coretsq$) interactions.
-*   **Passive Tracer Advection:** Tracks a large number of passive tracer particles to visualize the flow field.
-*   **Circular Domain with Method of Images:** Enforces no-penetration boundary conditions on a circular domain using image vortices and a background correction flow for non-zero total circulation.
-*   **RK4 Time Integration:** Employs a fourth-order Runge-Kutta scheme for accurate time evolution of the system.
-*   **Dual Backend Support (CPU/GPU):**
-    *   CPU: NumPy with Numba JIT compilation for accelerated loops.
-    *   GPU: CuPy for CUDA-based acceleration on NVIDIA GPUs, including custom `ElementwiseKernel` for the Lamb-Oseen factor.
-*   **Configurable Simulation Parameters:** Extensive set of parameters controllable via command-line arguments (see `python main.py --help`).
-*   **Animation Output:** Generates MP4 video using Matplotlib and FFmpeg, showing particle dynamics and diagnostic plots.
-*   **Multiple Tracer Coloring Modes:**
-    *   `group`: Tracers colored by initial group assignment.
-    *   `scalar`: Tracers colored by an initial scalar field (e.g., radial gradient).
-    *   `speed`: Tracers colored by their instantaneous speed.
-*   **Tracer Glow Effects:** Optional multi-layered glow effects for enhanced visualization of tracers.
-*   **Conservation Monitoring:** Tracks and plots angular and linear impulse to assess simulation accuracy.
-*   **Static Plot Generation:** Includes a separate script (`generate_plots.py`) to produce key figures for the technical report.
+* **2D Point Vortex Dynamics** – simulates the interaction of multiple point vortices.  
+* **Lamb–Oseen Regularisation** – avoids singular cores by replacing each point vortex with a Lamb–Oseen vortex.  
+  * vortex–vortex core (squared) radius: $a_{vv}^{2}$  
+  * vortex–tracer core (squared) radius: $a_{vt}^{2}$  
+* **Passive Tracer Advection** – tracks thousands of passive tracers to visualise the flow.  
+* **Circular Domain via Method of Images** – enforces a no-penetration boundary on a circle of radius $R$; adds a background flow whenever the net circulation is non-zero.  
+* **RK4 Time Integration** – fourth-order Runge–Kutta for accurate trajectories.  
+* **Dual Back-end (CPU / GPU)**  
+  * **CPU** – NumPy + Numba JIT  
+  * **GPU** – CuPy with a custom `ElementwiseKernel` for the Lamb–Oseen factor  
+* **Configurable Parameters** – all major settings exposed as CLI flags (`python main.py --help`).  
+* **Animation Output** – Matplotlib + FFmpeg MP4 showing particle motion and diagnostics.  
+* **Multiple Tracer-colour Modes**: `group`, `scalar`, `speed`.  
+* **Tracer Glow Effects** – optional multi-layer glow for better visuals.  
+* **Conservation Monitoring** – plots linear and angular impulse over time.  
+* **Static Plot Generation** – `generate_plots.py` reproduces key figures for the report.  
 
 ## System Model
 
-The simulation is set in a 2D circular domain of radius $\domainradius$.
-*   **Vortices:** $N_v$ vortices, each with position $\pos_k(t)$ and constant circulation strength $\vortstrength_k$.
-*   **Tracers:** $N_t$ passive tracers, each with position $\tracerpos_j(t)$, advected by the flow.
+The flow is confined to a two-dimensional circular domain of radius $R$.
 
-The velocity field of a Lamb-Oseen vortex with strength $\vortstrength$ and squared core radius $a^2$ at $\bm{r}=(x,y)$ relative to the vortex is:
-$$ \vel(x,y; \vortstrength, a^2) = \frac{\vortstrength}{2\pi} \frac{1 - e^{-(x^2+y^2)/a^2}}{x^2+y^2} \begin{pmatrix} -y \\ x \end{pmatrix} $$
-The method of images is used for the circular boundary: for each vortex $(\pos_k, \vortstrength_k)$, an image vortex $(\pos_k', \vortstrength_k')$ is placed at $\pos_k' = (\domainradius^2/\|\pos_k\|^2) \pos_k$ with strength $\vortstrength_k' = -\vortstrength_k$. A background rotational flow is added if $\sum \vortstrength_k \neq 0$.
+* **Vortices** – $N_{v}$ vortices at positions $\mathbf{x}_{k}(t)$ with fixed circulations $\Gamma_{k}$.  
+* **Tracers** – $N_{t}$ passive particles at positions $\mathbf{q}_{j}(t)$ advected by the velocity field.
 
-The equations of motion for vortex $i$ and tracer $l$ are:
-$$ \frac{d\pos_i}{dt} = \sum_{\substack{j=1 \\ j \neq i}}^{N_v} \vel(\pos_i - \pos_j; \vortstrength_j, \corevsq) + \sum_{j=1}^{N_v} \vel(\pos_i - \pos_j'; \vortstrength_j', \corevsq) + \vel_{\text{bg}}(\pos_i) $$
-$$ \frac{d\tracerpos_l}{dt} = \sum_{j=1}^{N_v} \vel(\tracerpos_l - \pos_j; \vortstrength_j, \coretsq) + \sum_{j=1}^{N_v} \vel(\tracerpos_l - \pos_j'; \vortstrength_j', \coretsq) + \vel_{\text{bg}}(\tracerpos_l) $$
+### Lamb–Oseen vortex
 
-For full mathematical details, please refer to the accompanying LaTeX report in the `tex/` directory.
+For a vortex of circulation $\Gamma$ and core radius $a$ located at the origin, the induced velocity at $\mathbf{r} = (x,y)$ is  
+
+$$
+\mathbf{u}(x,y;\,\Gamma,a^{2}) \;=\;
+\frac{\Gamma}{2\pi}\;
+\frac{1 - \exp\!\left[-\dfrac{x^{2}+y^{2}}{a^{2}}\right]}{\,x^{2}+y^{2}}\;
+\begin{pmatrix}
+ -\,y \\[4pt] x
+\end{pmatrix}.
+$$
+
+### Method of images for the circular boundary
+
+Every real vortex $(\mathbf{x}_{k},\Gamma_{k})$ generates an image vortex  
+
+$$
+\mathbf{x}_{k}' \;=\; \frac{R^{2}}{\lVert\mathbf{x}_{k}\rVert^{2}}\,\mathbf{x}_{k},
+\qquad
+\Gamma_{k}' \;=\; -\,\Gamma_{k},
+$$
+
+ensuring the radial velocity vanishes on $r = R$.  
+If $\sum_{k=1}^{N_{v}}\Gamma_{k} \neq 0$, a uniform background rotation
+
+$$
+\mathbf{u}_{\text{bg}}(\mathbf{r}) \;=\;
+\frac{1}{2\pi R^{2}}\!\left(\sum_{k=1}^{N_{v}}\Gamma_{k}\right)
+\begin{pmatrix}
+ -\,y \\[4pt] x
+\end{pmatrix}
+$$
+
+is added.
+
+### Equations of motion
+
+Vortex paths:
+
+$$
+\frac{\mathrm{d}\mathbf{x}_{i}}{\mathrm{d}t} \;=\;
+\sum_{\substack{j=1\\[2pt]j\neq i}}^{N_{v}}
+\mathbf{u}\bigl(\mathbf{x}_{i}-\mathbf{x}_{j};\,\Gamma_{j},a_{vv}^{2}\bigr)\;+\;
+\sum_{j=1}^{N_{v}}
+\mathbf{u}\bigl(\mathbf{x}_{i}-\mathbf{x}_{j}';\,\Gamma_{j}',a_{vv}^{2}\bigr)\;+\;
+\mathbf{u}_{\text{bg}}\bigl(\mathbf{x}_{i}\bigr).
+$$
+
+Tracer paths:
+
+$$
+\frac{\mathrm{d}\mathbf{q}_{\ell}}{\mathrm{d}t} \;=\;
+\sum_{j=1}^{N_{v}}
+\mathbf{u}\bigl(\mathbf{q}_{\ell}-\mathbf{x}_{j};\,\Gamma_{j},a_{vt}^{2}\bigr)\;+\;
+\sum_{j=1}^{N_{v}}
+\mathbf{u}\bigl(\mathbf{q}_{\ell}-\mathbf{x}_{j}';\,\Gamma_{j}',a_{vt}^{2}\bigr)\;+\;
+\mathbf{u}_{\text{bg}}\bigl(\mathbf{q}_{\ell}\bigr).
+$$
+
+For a complete derivation and further implementation details, see the technical report in `tex/`.
 
 ## Numerical Implementation
 
@@ -200,24 +270,6 @@ Refer to `python main.py --help` for a complete list and descriptions.
     *   `angular_impulse_plot.png` & `linear_impulse_plot.png`: Plots showing conservation of these quantities from a short test simulation.
     *   `report_figures_summary.md`: A markdown file summarizing parameters used for generating these static plots.
 
-## Example Animations
-
-The following animations demonstrate the simulation capabilities. They were generated with settings similar to those found in the `animation/original/` directory, typically involving a moderate number of vortices ($N_v=20$) and a large number of tracers ($N_t \approx 1.3 \times 10^6$).
-
-1.  **Scalar Plume Advection (using `plume` colormap and glow effects):**
-    This video shows tracers initialized with a scalar value based on their initial positions, advected by the vortices. It uses the custom 'plume' colormap and glow effects for enhanced visuals.
-    [Watch Video: Scalar Plume](https://github.com/user-attachments/assets/03d3e51f-e83b-40c6-88af-02c2e2ff9d8f)
-    <br>(If the video doesn't embed below, please use the link above to view.)
-    <video src="https://github.com/user-attachments/assets/03d3e51f-e83b-40c6-88af-02c2e2ff9d8f" controls width="720"></video>
-
-2.  **Grouped Tracer Advection (using `jet` colormap):**
-    This video shows tracers initialized in several distinct groups, each with a different color. It illustrates how different regions of fluid are stretched and mixed by the vortex flow.
-    [Watch Video: Grouped Tracers](https://github.com/user-attachments/assets/1cbf5575-aa51-412e-8bba-9535f1c960b8)
-    <br>(If the video doesn't embed below, please use the link above to view.)
-    <video src="https://github.com/user-attachments/assets/1cbf5575-aa51-412e-8bba-9535f1c960b8" controls width="720"></video>
-
-*(Note: The original example videos `animation/original/pv_scalar_plume_1.3M.mp4` and `animation/original/pv_group_1.3M.mp4` serve as references for the kind of output this simulation can produce.)*
-
 ## Key Figures for Report
 
 The `generate_plots.py` script creates several figures useful for understanding the simulation setup and verifying its correctness. These are saved in the project root directory.
@@ -228,20 +280,6 @@ The `generate_plots.py` script creates several figures useful for understanding 
 | `initial_config_grouped_tracers.png` | Shows an example initial configuration of vortices and tracers, typically for the 'group' coloring mode.                                                                 |
 | `angular_impulse_plot.png`           | Plots the relative change in angular impulse ($L_z$) over time for a test simulation, demonstrating its conservation (or near-conservation).                               |
 | `linear_impulse_plot.png`            | Plots the components of linear impulse ($P_x, P_y$) over time for a test simulation, demonstrating their conservation (or near-conservation).                              |
-
-**Example Figures:**
-
-**Vortex Image Schematic:**
-![Vortex Image Schematic](vortex_image_schematic.png)
-
-**Initial Configuration (Grouped Tracers):**
-![Initial Configuration](initial_config_grouped_tracers.png)
-
-**Angular Impulse Evolution:**
-![Angular Impulse Evolution](angular_impulse_plot.png)
-
-**Linear Impulse Evolution:**
-![Linear Impulse Evolution](linear_impulse_plot.png)
 
 A summary of parameters used to generate these specific figures can be found in `report_figures_summary.md`.
 
