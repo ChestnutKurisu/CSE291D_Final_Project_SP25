@@ -127,6 +127,7 @@ CSE291D_Final_Project_SP25/
 │   │   ├── angular_impulse_plot.png
 │   │   ├── initial_config_grouped_tracers.png
 │   │   ├── linear_impulse_plot.png
+│   │   ├── simulation_snapshot.png
 │   │   └── vortex_image_schematic.png
 │   ├── report.tex
 │   ├── Final_Project_Report.pdf
@@ -152,9 +153,10 @@ python main.py --help
 
 1.  **Run on GPU (if available):**
     ```bash
-    python main.py --n-vortices 20 --n-tracers 500000 --simulation-time 10.0 \
-                   --output-filename animation_gpu.mp4 --gpu-enabled \
-                   --tracer-coloring-mode group --num-tracer-groups 5
+    python main.py --n-vortices 20 --gpu-enabled True --n-tracers 1300000 --tracer-coloring-mode group --num-tracer-groups 5 --simulation-time 1.0 --output-filename pv_group_1.3M.mp4
+    ```
+    ```bash
+    python main.py --gpu-enabled --n-tracers 1300000 --tracer-coloring-mode scalar --tracer-cmap plume --tracer-alpha 1.0 --tracer-particle-size 0.20 --tracer-glow-layers '0.12,0.12;0.04,0.04' --figure-bg-color '#001428' --axes-bg-color '#001428' --simulation-time 1.0 --output-filename pv_scalar_plume_1.3M.mp4
     ```
 
 2.  **Run on CPU (using Numba for acceleration if available):**
@@ -231,6 +233,11 @@ The `generate_plots.py` script creates several figures useful for understanding 
 
 A summary of parameters used to generate these specific figures can be found in `report_figures_summary.md`.
 
-## Acknowledgments
+## Contact
 
-OpenAI's GPT-4 model was utilized as an assistant in structuring and drafting portions of this README file and the accompanying LaTeX report, based on the provided Python source code and project guidelines. The author of the code (Param Somane) actively reviewed, and is expected to test and adjust, the generated text, equations, and figures to ensure accuracy and reflect their complete understanding and implementation.
+For questions, feedback, or collaboration inquiries regarding this fluid simulation project:
+
+**Param Somane**  
+Email: [psomane@ucsd.edu](mailto:psomane@ucsd.edu)  
+*CSE 291 (Spring 2025) Midterm Miniproject*  
+University of California, San Diego
