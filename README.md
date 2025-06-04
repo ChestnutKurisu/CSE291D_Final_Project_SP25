@@ -40,13 +40,13 @@ The following animations demonstrate the simulation capabilities. They were gene
     This video shows tracers initialized with a scalar value based on their initial positions, advected by the vortices. It uses the custom 'plume' colormap and glow effects for enhanced visuals.
     [Watch Video: Scalar Plume](https://github.com/user-attachments/assets/03d3e51f-e83b-40c6-88af-02c2e2ff9d8f)
     <br>(If the video doesn't embed below, please use the link above to view.)
-    <video src="https://github.com/user-attachments/assets/03d3e51f-e83b-40c6-88af-02c2e2ff9d8f" controls width="720"></video>
+    <video src="https://github.com/user-attachments/assets/03d3e51f-e83b-40c6-88af-02c2e2ff9d8f" controls width="720" height="720"></video>
 
 2.  **Grouped Tracer Advection (using `jet` colormap):**
     This video shows tracers initialized in several distinct groups, each with a different color. It illustrates how different regions of fluid are stretched and mixed by the vortex flow.
     [Watch Video: Grouped Tracers](https://github.com/user-attachments/assets/1cbf5575-aa51-412e-8bba-9535f1c960b8)
     <br>(If the video doesn't embed below, please use the link above to view.)
-    <video src="https://github.com/user-attachments/assets/1cbf5575-aa51-412e-8bba-9535f1c960b8" controls width="720"></video>
+    <video src="https://github.com/user-attachments/assets/1cbf5575-aa51-412e-8bba-9535f1c960b8" controls width="720" height="720"></video>
 
 *(Note: The original example videos `animation/original/pv_scalar_plume_1.3M.mp4` and `animation/original/pv_group_1.3M.mp4` serve as references for the kind of output this simulation can produce.)*
 
@@ -78,15 +78,21 @@ The simulation is set in a 2D circular domain of radius $R$.
 
 The velocity field of a Lamb-Oseen vortex with strength $\Gamma$ and squared core radius $a^2$ at $\mathbf{r}=(x,y)$ relative to the vortex is:
 
-$$ \mathbf{u}(x,y; \Gamma, a^2) = \frac{\Gamma}{2\pi} \frac{1 - e^{-(x^2+y^2)/a^2}}{x^2+y^2} \begin{pmatrix} -y \\ x \end{pmatrix} $$
+$$
+\mathbf{u}(x,y; \Gamma, a^2) = \frac{\Gamma}{2\pi} \frac{1 - e^{-(x^2+y^2)/a^2}}{x^2+y^2} \begin{pmatrix} -y \\ x \end{pmatrix}
+$$
 
 The method of images is used for the circular boundary: for each vortex $(\mathbf{r}_k, \Gamma_k)$, an image vortex $(\mathbf{r}_k', \Gamma_k')$ is placed at $\mathbf{r}_k' = (R^2/\|\mathbf{r}_k\|^2) \mathbf{r}_k$ with strength $\Gamma_k' = -\Gamma_k$. A background rotational flow is added if $\sum \Gamma_k \neq 0$.
 
 The equations of motion for vortex $i$ and tracer $l$ are:
 
-$$ \frac{d\mathbf{r}_i}{dt} = \sum_{\substack{j=1 \\ j \neq i}}^{N_v} \mathbf{u}(\mathbf{r}_i - \mathbf{r}_j; \Gamma_j, a_v^2) + \sum_{j=1}^{N_v} \mathbf{u}(\mathbf{r}_i - \mathbf{r}_j'; \Gamma_j', a_v^2) + \mathbf{u}_{\text{bg}}(\mathbf{r}_i) $$
+$$
+\frac{d\mathbf{r}_i}{dt} = \sum_{\substack{j=1 \\ j \neq i}}^{N_v} \mathbf{u}(\mathbf{r}_i - \mathbf{r}_j; \Gamma_j, a_v^2) + \sum_{j=1}^{N_v} \mathbf{u}(\mathbf{r}_i - \mathbf{r}_j'; \Gamma_j', a_v^2) + \mathbf{u}_{\text{bg}}(\mathbf{r}_i)
+$$
 
-$$ \frac{d\mathbf{x}_l}{dt} = \sum_{j=1}^{N_v} \mathbf{u}(\mathbf{x}_l - \mathbf{r}_j; \Gamma_j, a_t^2) + \sum_{j=1}^{N_v} \mathbf{u}(\mathbf{x}_l - \mathbf{r}_j'; \Gamma_j', a_t^2) + \mathbf{u}_{\text{bg}}(\mathbf{x}_l) $$
+$$
+\frac{d\mathbf{x}_l}{dt} = \sum_{j=1}^{N_v} \mathbf{u}(\mathbf{x}_l - \mathbf{r}_j; \Gamma_j, a_t^2) + \sum_{j=1}^{N_v} \mathbf{u}(\mathbf{x}_l - \mathbf{r}_j'; \Gamma_j', a_t^2) + \mathbf{u}_{\text{bg}}(\mathbf{x}_l)
+$$
 
 For full mathematical details, please refer to the accompanying LaTeX report in the `tex/` directory.
 
