@@ -83,9 +83,9 @@ The method of images is used for the circular boundary: for each vortex $(r_k, \
 
 The equations of motion for vortex $i$ and tracer $l$ are
 
-$$ \frac{dr_i}{dt} = \sum_{\substack{j = 1 \\ j \neq i}}^{N_v} u\bigl(r_i - r_j;\,\Gamma_j,a_v^{2}\bigr)+\sum_{j = 1}^{N_v} u\bigl(r_i - r_j^{\prime};\,\Gamma_j^{\prime},a_v^{2}\bigr)+u_{\text{bg}}(r_i), $$
+$$ \frac{dr_i}{dt} = \sum_{\substack{j = 1 \\ j \neq i}}^{N_v} u\bigl(r_i - r_j;\Gamma_j,a_v^{2}\bigr)+\sum_{j = 1}^{N_v} u\bigl(r_i - r_j^{\prime};\Gamma_j^{\prime},a_v^{2}\bigr)+u_{\text{bg}}(r_i), $$
 
-$$ \frac{dx_l}{dt} = \sum_{j = 1}^{N_v} u\bigl(x_l - r_j;\,\Gamma_j,a_t^{2}\bigr)+ \sum_{j = 1}^{N_v} u\bigl(x_l - r_j^{\prime};\,\Gamma_j^{\prime},a_t^{2}\bigr)+ u_{\text{bg}}(x_l). $$
+$$ \frac{dx_l}{dt} = \sum_{j = 1}^{N_v} u\bigl(x_l - r_j;\Gamma_j,a_t^{2}\bigr)+ \sum_{j = 1}^{N_v} u\bigl(x_l - r_j^{\prime};\Gamma_j^{\prime},a_t^{2}\bigr)+ u_{\text{bg}}(x_l). $$
 
 For full mathematical details, please refer to the accompanying LaTeX report in the `tex/` directory.
 
