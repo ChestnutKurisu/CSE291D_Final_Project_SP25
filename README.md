@@ -34,7 +34,7 @@ This project fulfills the requirements for a continuum mechanical simulation, sp
 
 ## Example Animations
 
-The following animations demonstrate the simulation capabilities. They were generated with settings similar to those found in the `animation/original/` directory, typically involving a moderate number of vortices ($N_v=20$) and a large number of tracers ($N_t \approx 1.3 \times 10^6$).
+The following animations demonstrate the simulation capabilities. They were generated with settings similar to those found in the `animation/` directory, involving a moderate number of vortices ($N_v=20$) and a large number of tracers ($N_t \approx 1.3 \times 10^6$).
 
 1.  **Scalar Plume Advection (using `plume` colormap and glow effects):**
     This video shows tracers initialized with a scalar value based on their initial positions, advected by the vortices. It uses the custom 'plume' colormap and glow effects for enhanced visuals.
@@ -47,7 +47,7 @@ The following animations demonstrate the simulation capabilities. They were gene
     <br>(If the video doesn't embed below, please use the link above to view.)
     <video src="https://github.com/user-attachments/assets/1cbf5575-aa51-412e-8bba-9535f1c960b8"></video>
 
-*(Note: The original example videos `animation/original/pv_scalar_plume_1.3M.mp4` and `animation/original/pv_group_1.3M.mp4` serve as references for the kind of output this simulation can produce.)*
+*(Note: The example videos `animation/pv_scalar_plume_1.3M.mp4` and `animation/pv_group_1.3M.mp4` serve as references for the kind of output this simulation can produce.)*
 
 ## Features
 
@@ -83,14 +83,28 @@ $$
 
 The method of images is used for the circular boundary: for each vortex $(\mathbf{r}_k, \Gamma_k)$, an image vortex $(\mathbf{r}_k', \Gamma_k')$ is placed at $\mathbf{r}_k' = (R^2/\|\mathbf{r}_k\|^2) \mathbf{r}_k$ with strength $\Gamma_k' = -\Gamma_k$. A background rotational flow is added if $\sum \Gamma_k \neq 0$.
 
-The equations of motion for vortex $i$ and tracer $l$ are:
+The equations of motion for vortex $i$ and tracer $l$ are
 
 $$
-\frac{d\mathbf{r}_i}{dt} = \sum_{\substack{j=1 \\ j \neq i}}^{N_v} \mathbf{u}(\mathbf{r}_i - \mathbf{r}_j; \Gamma_j, a_v^2) + \sum_{j=1}^{N_v} \mathbf{u}(\mathbf{r}_i - \mathbf{r}_j'; \Gamma_j', a_v^2) + \mathbf{u}_{\text{bg}}(\mathbf{r}_i)
+\frac{d\mathbf{r}_i}{dt} = 
+\sum_{\substack{j = 1 \\ j \neq i}}^{N_v}
+\mathbf{u}\bigl(\mathbf{r}_i - \mathbf{r}_j;\,\Gamma_j,a_v^{2}\bigr)
+\;+\;
+\sum_{j = 1}^{N_v}
+\mathbf{u}\bigl(\mathbf{r}_i - \mathbf{r}_j^{\prime};\,\Gamma_j^{\prime},a_v^{2}\bigr)
+\;+\;
+\mathbf{u}_{\text{bg}}(\mathbf{r}_i),
 $$
 
 $$
-\frac{d\mathbf{x}_l}{dt} = \sum_{j=1}^{N_v} \mathbf{u}(\mathbf{x}_l - \mathbf{r}_j; \Gamma_j, a_t^2) + \sum_{j=1}^{N_v} \mathbf{u}(\mathbf{x}_l - \mathbf{r}_j'; \Gamma_j', a_t^2) + \mathbf{u}_{\text{bg}}(\mathbf{x}_l)
+\frac{d\mathbf{x}_l}{dt} = 
+\sum_{j = 1}^{N_v}
+\mathbf{u}\bigl(\mathbf{x}_l - \mathbf{r}_j;\,\Gamma_j,a_t^{2}\bigr)
+\;+\;
+\sum_{j = 1}^{N_v}
+\mathbf{u}\bigl(\mathbf{x}_l - \mathbf{r}_j^{\prime};\,\Gamma_j^{\prime},a_t^{2}\bigr)
+\;+\;
+\mathbf{u}_{\text{bg}}(\mathbf{x}_l).
 $$
 
 For full mathematical details, please refer to the accompanying LaTeX report in the `tex/` directory.
@@ -126,9 +140,6 @@ If you don't have a compatible NVIDIA GPU or don't want to use GPU acceleration,
 CSE291D_Final_Project_SP25/
 ├── .git/                        # Git repository files
 ├── animation/                   # Contains output animations and example videos
-│   ├── original/                # Original example videos from a similar project
-│   │   ├── pv_group_1.3M.mp4
-│   │   └── pv_scalar_plume_1.3M.mp4
 │   ├── pv_group_1.3M.mp4        # Example animation (linked below)
 │   └── pv_scalar_plume_1.3M.mp4 # Example animation (linked below)
 ├── tex/                         # LaTeX report source, figures, and generated PDF
