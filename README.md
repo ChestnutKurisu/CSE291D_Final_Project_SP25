@@ -77,11 +77,15 @@ The simulation is set in a 2D circular domain of radius $R$.
 *   **Tracers:** $N_t$ passive tracers, each with position $\mathbf{x}_j(t)$, advected by the flow.
 
 The velocity field of a Lamb-Oseen vortex with strength $\Gamma$ and squared core radius $a^2$ at $\mathbf{r}=(x,y)$ relative to the vortex is:
+
 $$ \mathbf{u}(x,y; \Gamma, a^2) = \frac{\Gamma}{2\pi} \frac{1 - e^{-(x^2+y^2)/a^2}}{x^2+y^2} \begin{pmatrix} -y \\ x \end{pmatrix} $$
+
 The method of images is used for the circular boundary: for each vortex $(\mathbf{r}_k, \Gamma_k)$, an image vortex $(\mathbf{r}_k', \Gamma_k')$ is placed at $\mathbf{r}_k' = (R^2/\|\mathbf{r}_k\|^2) \mathbf{r}_k$ with strength $\Gamma_k' = -\Gamma_k$. A background rotational flow is added if $\sum \Gamma_k \neq 0$.
 
 The equations of motion for vortex $i$ and tracer $l$ are:
+
 $$ \frac{d\mathbf{r}_i}{dt} = \sum_{\substack{j=1 \\ j \neq i}}^{N_v} \mathbf{u}(\mathbf{r}_i - \mathbf{r}_j; \Gamma_j, a_v^2) + \sum_{j=1}^{N_v} \mathbf{u}(\mathbf{r}_i - \mathbf{r}_j'; \Gamma_j', a_v^2) + \mathbf{u}_{\text{bg}}(\mathbf{r}_i) $$
+
 $$ \frac{d\mathbf{x}_l}{dt} = \sum_{j=1}^{N_v} \mathbf{u}(\mathbf{x}_l - \mathbf{r}_j; \Gamma_j, a_t^2) + \sum_{j=1}^{N_v} \mathbf{u}(\mathbf{x}_l - \mathbf{r}_j'; \Gamma_j', a_t^2) + \mathbf{u}_{\text{bg}}(\mathbf{x}_l) $$
 
 For full mathematical details, please refer to the accompanying LaTeX report in the `tex/` directory.
