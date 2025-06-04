@@ -39,7 +39,8 @@ The following animations demonstrate the simulation capabilities. They were gene
 1.  **Scalar Plume Advection (using `plume` colormap and glow effects):**
     This video shows tracers initialized with a scalar value based on their initial positions, advected by the vortices. It uses the custom 'plume' colormap and glow effects for enhanced visuals.
     [Watch Video: Scalar Plume](https://github.com/user-attachments/assets/03d3e51f-e83b-40c6-88af-02c2e2ff9d8f)
-    https://github.com/user-attachments/assets/03d3e51f-e83b-40c6-88af-02c2e2ff9d8f
+
+https://github.com/user-attachments/assets/03d3e51f-e83b-40c6-88af-02c2e2ff9d8f
 
 2.  **Grouped Tracer Advection (using `jet` colormap):**
     This video shows tracers initialized in several distinct groups, each with a different color. It illustrates how different regions of fluid are stretched and mixed by the vortex flow.
