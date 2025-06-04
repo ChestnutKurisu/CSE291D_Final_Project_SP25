@@ -1,0 +1,21 @@
+# core numerics ------------------------------------------------------
+numpy>=1.24,<1.26          # 1.25.x is the latest that works everywhere
+scipy<1.11                 # satisfies pyelastica 0.3.x
+numba>=0.57,<0.58          # OK with numpy 1.25, required by sopht
+cupy-cuda11x ; platform_system=="Linux"  # optional GPU acceleration
+pyfftw
+h5py
+pyelastica                 # 0.3.2, brings SciPy pin
+
+# geometry / viz -----------------------------------------------------
+meshio
+matplotlib                 # remove the duplicate later in the file
+pyvista
+vedo
+imageio
+ffmpeg-python
+tqdm
+pandas
+
+# fluid/solid solver -------------------------------------------------
+git+https://github.com/SophT-Team/SophT.git#egg=sopht
